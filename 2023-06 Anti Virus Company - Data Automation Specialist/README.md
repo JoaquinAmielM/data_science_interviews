@@ -231,13 +231,15 @@ The parameters for these types of models are as follows:
 
 From the charts:
 
-- For ACF plot, initial spikes at lag = 1 and a small seasonal spike at lag = 12 and 13, which means a probable AR order of 1 and seasonal AR order of 1
+- **ACF**: a clear negative spike at lag 1 and another one at lag 12. In the ACF, spikes point to MA terms, so this suggests $q = 1$ and a seasonal $Q = 1$.
 
-- For PACF plot, initial spikes at lag = 1,4 and a small seasonal spike at lag = 12, which means a probable MA order of 1 and seasonal MA order of 1
+- **PACF**: a spike at lag 1 (and a weak one at lag 4), and a small one at lag 12. In the PACF, spikes point to AR terms, so this suggests $p = 1$ (maybe up to 4) and a seasonal $P$ of 0 or 1.
 
-So, our probable SARIMA model equation can be:
+So a first guess for the model is:
 
-- $SARIMA\ (1,1,4)\times(1,1,1)_{12}$
+- $SARIMA\ (1,1,1)\times(1,1,1)_{12}$
+
+This is very close to the model finally chosen by the search below, $SARIMA\ (1,1,1)\times(0,1,1)_{12}$.
 
 Then 40 combinations of settings were tried and ranked by AIC (a score that rewards a good fit and punishes extra parameters; lower is better). These are the best five:
 

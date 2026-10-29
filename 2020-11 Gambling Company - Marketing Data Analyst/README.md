@@ -956,6 +956,8 @@ Some variables were deleted because their effect in the model was not the expect
 - BsmtFinType1_GLQ
 - GarageFinish_RFn
 
+> **Looking back:** deleting a variable because its sign "makes no sense" is risky (the same goes for *Functional* and *OverallCond* in section 3.3). An unexpected sign often shows up when two variables carry the same information and the model splits the effect between them, or it can be a real effect we did not expect. A safer way is to check first how correlated those variables are, and then keep or drop them based on the error on the test set, not on the sign.
+
 #### 4.3.3 Lasso regression - version 2
 
 > **In this section** we train the lasso again with only the variables that behave as expected. *TotRmsAbvGrd* is also dropped because it is highly correlated with *BedroomAbvGr*, and the VIF (variance inflation factor, a number that says how much a variable can be explained by the others: above 10 means trouble) confirms that the remaining 13 variables are not redundant. The whole preparation is repeated with this reduced set (split, removal of the seven most expensive houses, standardization) and the errors are measured again.

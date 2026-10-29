@@ -5,7 +5,7 @@
 > - **Role:** Senior Data Analyst (Aug 2022)
 > - **Question:** for a rental platform in Italy: which KPIs (key numbers to track) matter most, and what do prices and cities tell us?
 > - **What I did:** cleaned the listings, drew prices over time, and mapped how many listings each city has per 100,000 people.
-> - **Result:** proposed 3 KPIs: registration rate, conversion rate and churn (clients who leave). The average apartment rent went from about 1,000 to 1,700 euros a month, and private rooms from 350 to 600.
+> - **Result:** proposed 3 KPIs: registration rate, conversion rate and churn (clients who leave). The average apartment rent went from about 1,000 to 1,700 euros a month, and private rooms from 350 to 600. Rome is the main city to grow in: the biggest city, with the most expensive apartments and very few listings per inhabitant.
 
 ## Data
 
@@ -33,9 +33,9 @@ The listings table has these columns:
 
 ## Programming Analysis and Data Visualization
 
-**Task 1:** Clean the dataset, provide code and explain the steps (either SQL or any programming language).
+**Task 1:** Clean the dataset, provide code and explain the steps.
 
-**Task 2:** Write SQL queries and create a graphical representation for the following topics and interpret the results:
+**Task 2:** Create a graphical representation for the following topics and interpret the results:
 
 - Price development over time
 - Geographical distribution & defining cities of interest
@@ -333,6 +333,16 @@ In the 4 cities with the most listings:
 | 27 | Turin | 390.715714 | 441 | 45.0667 | 7.7000 | Italy | IT | Piedmont | admin | 870952.0 | 870952.0 | 50.634249 | POINT (7.70000 45.06670) | 50.634249 |
 | 28 | Venice | 398.773333 | 75 | 45.4397 | 12.3319 | Italy | IT | Veneto | admin | 261321.0 | 261321.0 | 28.700334 | POINT (12.33190 45.43970) | 50.000000 |
 | 29 | Verona | 419.913043 | 23 | 45.4386 | 10.9928 | Italy | IT | Veneto | minor | 257275.0 | 257275.0 | 8.939850 | POINT (10.99280 45.43860) | 50.000000 |
+
+## 6. Cities of interest: conclusions
+
+> **In this section** we read the three city tables and maps together, to decide which cities to focus on. Penetration = listings per 100,000 inhabitants.
+
+- **Core cities (defend them):** Bologna, Milan, Pisa and Florence hold most of the listings (rooms: 1,614, 1,346, 1,214 and 704). They are university cities, which fits the company's main tenants (students and young professionals).
+- **Small cities where the company is already strong:** Pisa (1,347 room listings per 100,000 inhabitants) and Siena (282) are small university towns with a very high penetration. There is little room to grow there; the goal is to keep the lead.
+- **Big cities with room to grow:** Rome has the most people (2.9 million) but only about 14 room listings per 100,000 inhabitants, against 98 in Milan. Naples (about 6) and Turin (about 51) are in the same situation. Rome also has the most expensive apartments (2,206 euros a month on average), and since the commission is 25% of the first month's rent, each apartment rented there brings more money. **Rome is the main city of interest**, followed by Naples and Turin.
+- **Apartments** are concentrated in Milan (572) and Florence (470), with Rome far behind (125) despite being the biggest city.
+- **Not enough data:** the very high apartment prices in Venice (3,337 euros) and Padova (2,123 euros) come from only 9 and 16 listings, so they are not reliable.
 
 ## Appendix: Python code
 

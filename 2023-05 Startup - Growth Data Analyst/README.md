@@ -246,9 +246,9 @@ Writing a Bayesian A/B test from scratch is slow and error-prone, especially in 
 
 ## 5. Conclusions and future steps
 
-Users walk more after installing the startupCompany app, with a probability of 99.996%: on average, about 414 more steps per day (about 290 calories per week, or 2 cans of beer).
+Users walk more after installing the startupCompany app, with a probability of 99.996%: on average, about 414 more steps per day. That is roughly 120-145 extra calories per week (a step burns about 0.04-0.05 calories), about one can of beer.
 
-For IOS users the probability is 98.129%: about 240 more steps per day (168 calories per week, or 1 can of beer).
+For IOS users the probability is 98.129%: about 240 more steps per day, roughly 65-85 calories per week (about half a can of beer).
 
 Android users gain more: 1,850 steps per day on average, against 240 for IOS. But the Android data is weak: of the 1,344 Android users, only 161 have data both before and after the install (158 after removing the users with more than 20,000 average steps per day, see section 3).
 
