@@ -84,15 +84,15 @@ VIP                    float64
 dtype: object
 ```
 
-### 2.2 Categorical's variables descriptive analysis
+### 2.2 Categorical variables: descriptive analysis
 
 > **In this section** we looked at the text columns (gender, alert type, country and deposit method): how many values are missing and what share of players are VIP in each category. We checked a hypothesis about missing country and gender, and filled the missing values with the category 'NaN'.
 
-The only dataset used in the next step is the Model dataset, which is the dataset used for the data analysis.
+From here on, only the Model dataset (the training data) is used for the analysis.
 
-With the *count* field in the descriptive table and the amount of rows, we can figure out the number of missing data. Missing data is not a big issue in the Deposit method and country. We have some issues with gender and Alert type.
+Comparing the *count* in the table below with the number of rows (35,000) tells us how many values are missing. Deposit method and country have few gaps; gender and alert type have more.
 
-**Hipothesis**: if a person doesn't have any data about country or gender, this is because the person is not registered in a proper way, and this is needed for a deposit. So, if a person is not properly registered and the hipothesis is true, it could be assumed that this person is not VIP.
+**Hypothesis**: if a player has no country or gender, maybe they did not finish signing up, and that is needed to make a deposit. If this is true, we could assume those players are not VIP.
 
 **Output:**
 
@@ -120,7 +120,7 @@ NaN     3827
 Name: Gender, dtype: int64
 ```
 
-The % of VIP customer is similar over different gender
+The share of VIP players is similar for every gender.
 
 ![Percentage of VIP per gender](plots/plot1_vip_per_gender.png)
 
@@ -138,11 +138,11 @@ All Deposit      5693
 Name: Dim_Alert_Type_Desc, dtype: int64
 ```
 
-The % of VIP customer is similar over different alert types. in the next steps alert types is going to be group in “sign ups / first deposit” and “rest”.
+The share of VIP players is similar for every alert type. In the next steps, alert types are grouped into two: “sign ups / first deposit” and “rest”.
 
 ![Percentage of VIP per alert type](plots/plot2_vip_per_alert_type.png)
 
-**Country:** the difference in percentage of VIP clients is noticeable across the countries (the chart that showed it is not available in the saved notebook).
+**Country:** the share of VIP players changes a lot from one country to another (the chart that showed it was not saved).
 
 **Output:**
 
@@ -161,7 +161,7 @@ UA     141
 Name: Country, Length: 196, dtype: int64
 ```
 
-**Deposit Method:** as it can be seen in the next tables, the difference in percentage of VIP clients is high accross the different deposit methods.
+**Deposit Method:** as the tables below show, the share of VIP players changes a lot between deposit methods.
 
 **Output:**
 
@@ -182,12 +182,12 @@ Name: Deposit_Method, Length: 155, dtype: int64
 
 ![Percentage of VIP per deposit method - Top 10 and Last 10](plots/plot3_vip_per_deposit_method.png)
 
-**Rejected Hipothesis**: The hipothesis (just with descriptive data, without a statistical test)  "*If a person doesn't have data about country or gender is because the person is not register in properly, and this is needed for a deposit"* is not true, so we can't set up as non VIP people without a country assigned.
+**Hypothesis rejected**: players without a country or gender are not clearly less likely to be VIP (checked only by looking at the numbers, without a statistical test). So we can't label everyone without a country as non-VIP.
 
-In this session it can be observed that the dataset doesn't have small categories (categories with less than 30 clients tends to overfit the final model), so use the "other" category is not needed.
+The data has no tiny categories (categories with fewer than 30 players can make the model overfit, i.e. learn noise instead of real patterns), so there is no need to group them into an "other" category.
 
 **Replace Missing values**:
-Some classification techniques don't work with missing data.
+Some classification models can't handle missing values, so the gaps were filled with the category 'NaN'.
 
 ### 2.3 Data Enrichment
 
@@ -196,24 +196,24 @@ Some classification techniques don't work with missing data.
 
 **Gross Domestic Product (GDP) Table:**
 
-Gross Domestic Product (GDP) per capita shows a country's GDP divided by its total population. The table below lists countries in the world ranked by GDP at Purchasing Power Parity (PPP) per capita, along with the Nominal GDP per capita. PPP takes into account the relative cost of living, rather than using only exchange rates, therefore providing a more accurate picture of the real differences in income.
+GDP per capita is a country's total income (Gross Domestic Product) divided by its population: a rough measure of how rich its people are. The table ranks countries by GDP per capita at Purchasing Power Parity (PPP), which adjusts for the cost of living, so it compares real incomes better than plain exchange rates. It also has the nominal GDP per capita (without that adjustment).
 
 Info from: https://www.worldometers.info/gdp/gdp-per-capita/
 
 **Country codes Table:**
-This is used to merge the initial data set and the GDP dataset. Also for future interpretations.
+This table links the players' data with the GDP table (it also helps to read the results later).
 
-Delete all the "()" in the country name field, for example "Bolivia (Plurinational State of)" was change by "Bolivia"
+The text in brackets was removed from the country names, for example "Bolivia (Plurinational State of)" became "Bolivia", so the names match between tables.
 
-Save dataset in a pickle file: This step is made because this data is going to be used in the model deploy. in a pickle file the user can save python objects in different format and read then without problems
+Both tables were saved as pickle files (a format that stores Python objects exactly as they are), because they are needed again when the model is used on new players.
 
-Median is used as a metric to fill the na data derived from the merge between tables, this is a centrality measure like the average but it is robust to outliers.
+Countries with no GDP data got the median GDP. The median is the middle value: like the average, but not pulled around by a few extreme values.
 
-### 2.4 Numeric's variables descriptive analysis
+### 2.4 Numeric variables: descriptive analysis
 
 > **In this section** we summarized the number columns (deposit amount, deposit quantity, age and GDP), compared their distributions between VIP and non-VIP players and looked at the correlation between the variables.
 
-From the descriptive table, it can be concluded that Deposit_amount, Deposit_quantity and VIP don't have missing data. Age have less than 400 missings (1% more or less) and the min and max values looks coherent.
+The table below shows that *Deposit_Amount*, *Deposit_Quantity* and *VIP* have no missing values. *Age* has fewer than 400 missing values (about 1%), and its minimum and maximum look reasonable.
 
 **Output:**
 
@@ -230,7 +230,7 @@ From the descriptive table, it can be concluded that Deposit_amount, Deposit_qua
 
 ![Deposit Amount distribution: all players, VIP and No VIP](plots/plot4_deposit_amount_distribution.png)
 
-In the range shown (0 to 200), the deposit amount between VIP and Non VIP is more or less the same. However, the percentage of Non VIP players with a small deposit is higher, and the summary below shows higher deposits for VIP (mean 974 vs 103, median 56 vs 43).
+In the range shown (0 to 200), VIP and non-VIP players deposit about the same. But more non-VIP players make small deposits, and the summary below shows that VIPs deposit more (average 974 vs 103, median 56 vs 43).
 
 **Output:**
 
@@ -258,7 +258,7 @@ max      10085.205071
 Name: Deposit_Amount, dtype: float64
 ```
 
-From 6,917 customer who don't deposit money, only 160 are VIP (2.31%). Moreover, from the customer who deposit money 9.1% are VIP, been the deposit status a good predictor.
+Of the 6,917 players who never deposited money, only 160 are VIP (2.31%). Of the players who did deposit, 9.1% are VIP. So whether a player deposits or not is a good predictor.
 
 ![Heatmap of VIP versus deposit status](plots/plot5_deposit_status_vs_vip.png)
 
@@ -266,7 +266,7 @@ From 6,917 customer who don't deposit money, only 160 are VIP (2.31%). Moreover,
 
 ![Deposit Quantity distribution: all players, VIP and No VIP](plots/plot6_deposit_quantity_distribution.png)
 
-VIP clients are a bit older than Non VIP.
+VIP players are a bit older than non-VIP players.
 
 ![Age distribution: all players, VIP and No VIP](plots/plot7_age_distribution.png)
 
@@ -298,25 +298,25 @@ Name: Age, dtype: float64
 
 ![Correlation plot](plots/plot8_correlation.png)
 
-There is a high correlation between Ranking_GDP and GDP_value, so Ranking_GDP was deleted because the relation with the VIP players is inverse (when the ranking increase the % of vip players decrease, this is worse for the interpretation).
+*Ranking_GDP* and *GDP_value* carry almost the same information (high correlation), so one had to go. *Ranking_GDP* was deleted because it works backwards (a higher ranking number means a poorer country), which makes it harder to read.
 
-There is a medium correlation between been VIP and the deposit amount, also, there is a small correlation between the VIP and age. Finally, there is a very small correlation between GDP and VIP.
+Being VIP has a medium correlation with the deposit amount, a small one with age, and a very small one with GDP.
 
 ## 3. Data pre-processing
-Train, test, standarization and get dummies variables.
+Split the data, turn text into numbers, fill the gaps, handle outliers and put all the variables on the same scale.
 
 ### 3.1 Train - test split
 
 > **In this section** we used 80% of the data for training and 20% for testing.
 
-Modelling data set was split in two disjoint subset: training data set (to identify the best model) and testing data set (to check if the model is expanding the result properly). The sample was getting considering the Deposit_Method.
+The data was split into two separate groups: a training set (to find the best model) and a test set (to check that the model also works on players it has never seen). The split was stratified by *Deposit_Method*: each deposit method keeps the same share in both groups.
 
 ### 3.2 Encoding categorical variables
 
 > **In this section** we turned the text columns into numbers: deposit method and country with target encoding, and alert type with one-hot encoding, grouped into two bigger groups. We dropped the columns not used by the models, repeated the same steps on the test set and saved the encodings. The first rows of the resulting training and test inputs are shown below.
 
 **Target Encoding**
-Country code and deposit method have more or less 200 categories.
+Country and deposit method have about 200 categories each: too many for one 0/1 column per category. So they were target encoded: each category is replaced by its share of VIP players in the training set.
 
 **Output:**
 
@@ -362,7 +362,7 @@ Country code and deposit method have more or less 200 categories.
 > **In this section** we created three new variables: whether the player made a deposit, and the square root of the deposit amount and of the deposit quantity (the two original columns were removed).
 
 
-### 3.6 Data standarization
+### 3.6 Data standardization
 
 > **In this section** we standardized all the variables (average 0 and spread 1) using the training set, applied the same scaling to the test set and saved the scaler.
 
@@ -373,7 +373,7 @@ Country code and deposit method have more or less 200 categories.
 
 > **In this section** we calculated the baseline scores (accuracy, F1, AUC and log loss) over 1,000 random simulations; they are the reference the models have to beat.
 
-A fundamental aspect of a model assessment is to compare with a baseline. In this case VIP players were simulated according to the probability of being a VIP in the training data.
+To know if a model is good, we compare it with a baseline: a very simple guess that any useful model must beat. Here the baseline picks VIP players at random, with the same VIP rate as the training data.
 
 **Baseline AUC and log loss**
 
@@ -404,7 +404,7 @@ A fundamental aspect of a model assessment is to compare with a baseline. In thi
 
 ### 4.2 Classification Techniques
 
-The charts and detailed metrics of the sections 4.2.1 to 4.2.4 are not included in the saved notebook (except the best parameters of the Logistic Regression). The test scores of each model are summarized in the table of section 4.3.
+The charts and detailed scores of sections 4.2.1 to 4.2.4 were not saved (except the best settings of the logistic regression). The test scores of each model are summarized in the table of section 4.3.
 
 #### 4.2.1 Logistic Regression
 
@@ -427,7 +427,7 @@ The charts and detailed metrics of the sections 4.2.1 to 4.2.4 are not included 
 > **In this section** we did the same with a random forest (settings chosen with a random search). We also looked at which variables matter most and compared the training and test results.
 
 
-#### 4.2.4 XgBoost
+#### 4.2.4 XGBoost
 
 > **In this section** we did the same with XGBoost.
 
@@ -436,20 +436,20 @@ The charts and detailed metrics of the sections 4.2.1 to 4.2.4 are not included 
 
 > **In this section** we picked the Random Forest as the final model and saved the four trained models.
 
-For compare performance metric in each model, the following table was built:
+This table compares every model on the test set. **Log loss**: how wrong the predicted chances are (lower is better). **Accuracy**: share of right guesses. **F1**: balance between finding the VIPs and not flagging non-VIPs by mistake. **AUC**: how well the model ranks VIPs above non-VIPs (0.5 = coin flip, 1 = perfect).
 
-| **Metric** | **Baseline** |  **Logistic** | **Tree** | **Random Forest** | **XgBoost** |
+| **Metric** | **Baseline** |  **Logistic** | **Tree** | **Random Forest** | **XGBoost** |
 |--|:-:|:-:|:-:|:-:|:-:|
 | **Log Loss**|  0.277 | 0.245 | 0.254 | **0.240** | 0.250 |
 | **Accuracy** | 0.856 |  0.700 | **0.875** | 0.703 | 0.763 |
 | **F1 Score** |  0.078 | 0.256 | **0.297** | 0.285 | 0.282  |
 | **AUC** |  0.500 | 0.750 | 0.693 | **0.765** | 0.745  |
 
-Comparing the results among different techniques, Random Forest gives the best results based on log loss. On the other hand, decission tree classifier ends up with the best F1 score and accuracy.
+Random Forest has the best log loss (the main metric of this task), so it was chosen. The decision tree has the best F1 score and accuracy.
 
-All the models perform better than the baseline in terms of F1 score, AUC and Log Loss. However, the accuracy in the baseline is only surpassed by the classification regression tree, this is because 92% of our customers are NoN VIP, so the baseline tends to predict most of the customers as NoN VIP (majority class).
+All models beat the baseline on F1, AUC and log loss. On accuracy, only the decision tree beats it. That is because 92% of players are not VIP: a guess that says "not VIP" almost every time is right most of the time, even though it finds almost no VIPs.
 
-In order to improve the model's output we should consider the cost of classify a VIP as NoN VIP (lost the opportunity of send the specific offer) and the cost of classify a NoN VIP customer as VIP (lost money sending the offer to someone with low CLV). This could be achived estimating the expected earning per VIP customer and the expected earning/lost per NoN VIP customer
+To improve the model, we should take into account what each mistake costs: calling a VIP "non-VIP" (we miss the chance to send the offer) and calling a non-VIP "VIP" (we spend money on an offer to someone with a low CLV, customer lifetime value: how much money a customer brings over time). This can be done by estimating the expected profit of each VIP and the expected profit or loss of each non-VIP.
 
 ## 5. Deploy the model
 
@@ -457,6 +457,8 @@ In order to improve the model's output we should consider the cost of classify a
 
 
 ## Appendix: Python code
+
+The code below is the same as in [`analysis.py`](analysis.py), grouped by the sections of this report. The only difference: here the file paths still point to the original Google Drive folder, while `analysis.py` reads from `data/` and `outputs/`.
 
 ### A.1 Set up environment (section 2.1)
 

@@ -32,9 +32,8 @@ Every folder follows the same layout:
 
 ```
 YYYY-MM Company type - Role/
-├── README.md        ← the report: problem, analysis and conclusions
-├── analysis.ipynb   ← the notebook (originally run on Google Colab)
-├── analysis.py      ← the same code as a plain Python script
+├── README.md        ← the report: problem, analysis, charts, conclusions and the full code
+├── analysis.py      ← the same code as a Python script you can run
 ├── assignment.docx  ← the original task, when available
 ├── data/            ← input data
 ├── outputs/         ← results and saved models (most models are not uploaded: the script trains them again)
@@ -42,7 +41,6 @@ YYYY-MM Company type - Role/
 ```
 
 **How to run it:** install the libraries once with `pip install -r requirements.txt`, then open a project folder and run `python analysis.py` from inside it (the scripts read `data/` and write to `outputs/`, both relative to that folder).
-The notebooks are the original Google Colab versions, so they still read the files from Google Drive.
  
 ---
 

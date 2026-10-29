@@ -1,4 +1,4 @@
-# startupCompany test challenge
+# Do Users Walk More After Installing the App?
 
 Joaquin Amiel Marcora - 2023-04-23
 
@@ -11,15 +11,15 @@ Joaquin Amiel Marcora - 2023-04-23
 
 ## 0. Problem statement
 
-**Goal**: check if users have an activity level increase after the startupCompany app installation.
+**Goal**: check if users become more active (walk more) after installing the startupCompany app.
 
-The sample dataset contains daily steps of our users (±2 weeks from install date):
+The sample data has the daily steps of our users, from 2 weeks before to 2 weeks after they installed the app:
 
 - **user_id**: unique id of a user
 - **platform**: device platform
 - **reg_date**: registration date
 - **steps_date**: date of steps
-- **steps**: amount of steps
+- **steps**: number of steps
 
 ## 1. Read the data and import libraries
 
@@ -49,9 +49,9 @@ steps                  int64
 
 > **In this section** we summarize the raw data and clean it: the records with 0 steps and the duplicated records are removed, and so are the 70 records without a platform. We also checked that no user has more than one platform and that no user has more than 28 days of data (some users have only one day), created the variables described below, and kept only the users with data before and after the app install event.
 
-On the one hand, 60,000 steps correspond to between 60 and 70 kilometers. It is possible for a person who runs marathons, but it would be good to investigate this data.
+The maximum, 60,000 steps in a day, is a very long distance: possible for a marathon runner, but worth checking.
 
-On the other hand, 0 steps can happen if the user is in the hospital and cannot walk, but not in 23% of the cases: probably there was a problem in the system, or the user turned off the cellphone or left the battery charging. Records with 0 steps will be deleted in the analysis.
+On the other side, 23% of the records have 0 steps. A day with 0 steps can happen (for example, someone in hospital), but not that often: most likely the phone was off or charging, or the system failed. So the records with 0 steps are removed.
 
 **Output (summary of the raw data):**
 
@@ -72,7 +72,7 @@ On the other hand, 0 steps can happen if the user is in the hospital and cannot 
 23.0474929183681
 ```
 
-There are 5 users without a platform associated, so they are going to be deleted. The following checks show that these users are missing the platform in all of their records.
+5 users have no platform, so they are removed. The checks below show that the platform is missing in all of their records.
 
 **Output (records per platform, after removing the records with 0 steps):**
 
@@ -89,14 +89,14 @@ There are 5 users without a platform associated, so they are going to be deleted
 | ANDROID | 1344 |
 | IOS | 2133 |
 
-Some relevant variables were created:
+Two new variables were created:
 
-- **Days after reg**: the difference in days between the record date and the user's installation date.
-- **startupCompany installed**: dummy that measures if the user has the app installed when the record was registered. In this analysis only the users with data before and after the app install event are considered.
+- **Days after reg**: how many days passed between the install date and the day of the record (negative = before the install).
+- **startupCompany installed**: a dummy (a 0/1 flag) that says if the user already had the app on the day of the record. Only the users with data both before and after the install are kept.
 
-Finally, it was verified that there is no user with more than one record in one day.
+Finally, no user has more than one record per day.
 
-From the 1,344 Android users that the database has, only 161 have data before and after the app installation event.
+Of the 1,344 Android users, only 161 have data both before and after the install.
 
 **Output (users per platform, after keeping only the users with data before and after the install):**
 
@@ -109,30 +109,30 @@ From the 1,344 Android users that the database has, only 161 have data before an
 
 > **In this section** we plot the distribution of steps per day and compare the steps before and after the install: a violin plot per platform, the daily mean and median steps, and a scatter plot of each user's mean steps before and after. The users whose mean steps before or after the install are above 20,000 per day are then removed (1,847 users remain: 1,689 IOS and 158 Android), and the mean increment of steps is computed for each user. Finally, we check how close to a normal distribution the square root of the mean steps is, with histograms and QQ plots.
 
-The amount of steps per day looks like a geometric distribution with an exponential decay.
+Steps per day follow a curve that drops fast (like an exponential decay): many days with few steps, and few days with many steps.
 
 ![Distribution of steps per day](plots/plot1_steps_distribution.png)
 
-Looking at the following violin plot, there is an increase in the amount of steps walked after the app installation, more noticeable in the Android users (in IOS it is a small increment). It can also be observed that the median steps of the Android users is lower than that of the IOS users.
+The violin plot below (it shows how the values are spread, like a smoothed histogram turned on its side) shows more steps after the install, especially for Android users (for IOS the increase is small). It also shows that Android users walk less than IOS users (lower median).
 
 ![Violin plot of steps by platform, before (0) and after (1) the install](plots/plot2_violin_platform.png)
 
-A positive correlation can be observed between the days after (or before) the app install event and the amount of steps. The chart uses only the users with data from 2 weeks before to 2 weeks after the install.
+Steps go up as the days pass, from before to after the install. The chart uses only the users with data from 2 weeks before to 2 weeks after the install.
 
 ![Mean and median steps per day, before and after the install](plots/plot3_steps_per_day.png)
 
-To analyse the impact of the app installation event, the result is considered at a user level, measuring if the user is walking more after the app installation event or not. Moreover, an analysis at record level would give different weights to each user, because the database does not have the steps walked on every day for each user, and the objective is to measure a general level of activity per user.
+The impact is measured per user (does each user walk more after installing?), not per record. Counting records would give more weight to users with more days of data, because not every user has data for every day, and we want one activity level per user.
 
-From the following chart, the amount of steps before and after the app install event can be compared. If we take the median steps before the install as a threshold that divides the chart into 4 quadrants, it looks like there are more users for whom the app had a positive effect (upper left quadrant) than users for whom the app had a negative effect (lower right quadrant).
+The chart below compares each user's average steps before and after the install. If we use the median steps before the install to split the chart into 4 quadrants, there seem to be more users for whom the app helped (upper left) than users for whom it hurt (lower right).
 
 ![Mean steps per user before and after the install](plots/plot4_scatter_before_after.png)
 
-To support the analysis, 2 variables were created:
+Two more variables were created:
 
-- **Mean increment steps**: mean steps walked after the installation event minus mean steps walked before the installation event.
-- **Positive increment steps**: a dummy variable that measures if the user walked more steps after the app installation event or not.
+- **Mean increment steps**: average steps per day after the install minus average steps per day before it.
+- **Positive increment steps**: a 0/1 flag that says if the user walked more after the install.
 
-It can be seen that the mean increment of steps almost follows a Gaussian distribution with a positive mean and median. However, the distribution has extreme values, so it is not exactly a normal distribution.
+The increment almost follows a normal (bell-shaped) distribution, with a positive mean and median. But it has some extreme values, so it is not exactly normal.
 
 ![Distribution of the mean increment of steps](plots/plot5_mean_increment_hist.png)
 
@@ -148,7 +148,7 @@ It can be seen that the mean increment of steps almost follows a Gaussian distri
 
 ![QQ plot, after the install](plots/plot8_qq_after.png)
 
-57.4% of the users experienced an increase in the steps walked per day after the app installation event.
+57.4% of the users walk more per day after installing the app.
 
 **Output (summary of positive increment steps; the mean is the share of users who walk more):**
 
@@ -169,12 +169,12 @@ It can be seen that the mean increment of steps almost follows a Gaussian distri
 
 > **In this section** we ran a one-sided binomial test on the share of users who walk more after the install (first against 50%, then against 60%) and a one-sided paired t-test on the square root of each user's mean steps before and after the install. The last chart shows the critical region of the t-test and its result.
 
-First of all, it was tested that more than half of the users have a positive change, in other words:
+First, a binomial test (a test for a share, like checking if a coin is fair) checks whether more than half of the users walk more after the install. Here *p* is the share of users who walk more:
 
 - $H_0$: $p \le 0.5$
 - $H_1$: $p > 0.5$
 
-From the following result, the null hypothesis is rejected with a confidence of 99%, because the returned p-value is lower than the critical value of 0.01.
+The p-value (the chance of a result like this one if the app did nothing) is far below 0.01, so we reject $H_0$ with 99% confidence: more than half of the users walk more.
 
 **Output (p-value):**
 
@@ -182,7 +182,7 @@ From the following result, the null hypothesis is rejected with a confidence of 
 8.456462424288589e-11
 ```
 
-If we change the probability of success $p$ to 0.6, we can't reject the null hypothesis ($H_0$: $p \le 0.6$).
+But we can't say that more than 60% of the users walk more: with 0.6 instead of 0.5, $H_0$ ($p \le 0.6$) can't be rejected.
 
 **Output (p-value):**
 
@@ -190,14 +190,14 @@ If we change the probability of success $p$ to 0.6, we can't reject the null hyp
 0.988074335850311
 ```
 
-In second place, a paired t-test is used (also known as a dependent sample test) to compare the means of two related samples. The samples belong to the same population and are analyzed under varied conditions, e.g., at different points in time. In our case, before and after the app installation event. This test is mostly popular for pretest/posttest type of experiments where a sample is studied before and after its conditions are varied with an experiment.
+Second, a paired t-test compares the averages of two related groups: here, the same users before and after the install. It is the usual test for "before and after" experiments. It was run on the square root of each user's average steps, which is closer to a normal distribution (something the test needs).
 
-- Null Hypothesis ($H_0$): dependent sample means ($m_1$ before the installation and $m_2$ after it) are equal ($m_1=m_2$). In other words, the mean steps walked before the app installation is equal to the mean steps walked after the app installation event.
-- Alternative Hypothesis ($H_a$): the mean steps walked after the app installation event are greater than the mean steps walked before it ($m_2>m_1$).
+- **Null hypothesis** ($H_0$): users walk the same on average before ($m_1$) and after ($m_2$) the install ($m_1=m_2$).
+- **Alternative hypothesis** ($H_a$): users walk more after the install ($m_2>m_1$).
 
 ![The three types of t-test; the paired samples t-test is highlighted](plots/plot9_ttest_types.png)
 
-After running the paired t-test, the null hypothesis is rejected, thus there is an activity level increase after the startupCompany app installation with a 99% of confidence.
+The paired t-test rejects $H_0$: with 99% confidence, users are more active after installing the startupCompany app.
 
 **Output (t statistic and p-value):**
 
@@ -213,15 +213,15 @@ t=7.7148, p_value=0.0
 
 > **In this section** we ran the Bayesian test (100,000 simulations) on the square root of each user's mean steps before and after the install, for all users together, for IOS users and for Android users. The averages and expected losses in the tables are in steps (the square root was undone).
 
-In certain cases, the Bayesian approach may provide useful results faster than the frequentist method. The main results are easier to understand for the business:
+The Bayesian approach answers the question the business actually asks: "what is the probability that users walk more after installing?". It can also give useful results faster than the traditional (frequentist) tests. Its advantages:
 
-- **Interpretability**: probability to choose the best variation.
-- **Scalability**: probabilities of being best scale to multiple variant tests.
+- **Interpretability**: the result is a plain probability that one option is the best.
+- **Scalability**: it works the same way with more than two options (A/B/C... tests).
 
-Developing a whole algorithm to run a Bayesian A/B test can be tough and prone to errors, especially in a technical test. For this reason I will use a small package for a quick evaluation of A/B (or A/B/C/...) tests using a Bayesian approach. In this particular situation the data needs to have a normal distribution; for this reason the square root has been used to transform the inputs. The outputs are the following:
+Writing a Bayesian A/B test from scratch is slow and error-prone, especially in a technical test, so I used a small package (`bayesian_testing`). It needs normally distributed data, so again the square root of the steps is used. It returns:
 
-- **Probability of being best**: probability that a given variant is best among all variants.
-- **Expected loss**: "risk" of choosing a particular variant over the other variants in the test, measured in the same units as the tested measure (e.g. positive rate or average value).
+- **Probability of being best**: the chance that each option (before / after the install) is the better one.
+- **Expected loss**: the "risk" of choosing an option if it turns out to be the worse one, in the same units as the data (here, steps).
 
 **Output (all users):**
 
@@ -246,13 +246,13 @@ Developing a whole algorithm to run a Bayesian A/B test can be tough and prone t
 
 ## 5. Conclusions and future steps
 
-There is an activity level increment after the startupCompany app installation with a probability of 99.996%; on average the person walks about 414 more steps per day (about 290 calories per week - 2 cans of beer).
+Users walk more after installing the startupCompany app, with a probability of 99.996%: on average, about 414 more steps per day (about 290 calories per week, or 2 cans of beer).
 
-In the IOS users, there is an activity level increment after the startupCompany app installation with a probability of 98.129%; on average the person walks about 240 more steps per day (168 calories per week - 1 can of beer).
+For IOS users the probability is 98.129%: about 240 more steps per day (168 calories per week, or 1 can of beer).
 
-It is good to mention that the users that used Android have an increment of 1,850 steps per day on average while the IOS users only 240. However, the data for Android users was not the best: from the 1,344 Android users that the database has, only 161 have data before and after the app installation event (158 after removing the users with more than 20,000 mean steps per day, see section 3).
+Android users gain more: 1,850 steps per day on average, against 240 for IOS. But the Android data is weak: of the 1,344 Android users, only 161 have data both before and after the install (158 after removing the users with more than 20,000 average steps per day, see section 3).
 
-In future steps, it would be great to have more features to test if there is an increase in the activity level in certain populations, for instance age, sex, location, weather, user agent, source of install, etc. It would help the company to focus its campaigns on specific segments. Also, it would be great if somebody analysed why so much Android data was lost.
+Next steps: get more data about the users (age, sex, location, weather, device, where they installed the app from, etc.) to see which groups become more active. That would help the company aim its campaigns at the right segments. It is also worth finding out why so much Android data is missing.
 
 ## Bibliography
 
@@ -263,7 +263,7 @@ In future steps, it would be great to have more features to test if there is an 
 
 ## Appendix: Python code
 
-The same code, with step-by-step explanatory comments, is in the file `startupCompany challenge.py`.
+The same code, with step-by-step comments, is in [`analysis.py`](analysis.py). The only difference: here the file path still points to the original Google Drive folder, while `analysis.py` reads from `data/`.
 
 ### A.1 Read the data and import libraries
 

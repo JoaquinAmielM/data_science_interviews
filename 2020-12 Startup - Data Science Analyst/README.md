@@ -1,4 +1,4 @@
-# Data Science Assignment
+# User Segmentation for a Marketing Campaign
 
 > **TL;DR**
 >
@@ -27,44 +27,44 @@ The deliverable of the assignment is a report with the following structure:
 
 ## Executive Summary
 
-The database provided has no label that would allow building a model based on historical data (from other campaigns, or a similar or identical one); that is, there is no prior knowledge. In addition, all the variables are numeric, so to model the data an unsupervised learning algorithm based on clustering was implemented. The goal is to find different groups among the individuals, so that individuals in the same cluster (or group) are more similar to each other than to those in different clusters.
+The data has no label (no column saying how users reacted to a past campaign), so we can't learn from history. All the variables are numbers, so I used clustering, an unsupervised method (one that finds patterns without a "right answer"): it puts users into groups, so that users in the same group are more alike than users in different groups.
 
-For data modeling, the k-means algorithm will be used, since it is the most widely used among unsupervised algorithms and also because all the variables considered are numeric, which makes this algorithm fit our need perfectly. The algorithm works as follows:
+I used K-means, the most common clustering method, which works well when all the variables are numbers. It works like this:
 
-1. Select the parameter *k*, the number of groups to use (using the elbow method), and start the process randomly by picking k random points in the space; these will be the center of each group.
-2. Classify each point by computing the distance between that point and the center of each group, and then assigning it to the group whose center is closest to it.
-3. Based on these classified points, recompute the center of each group by taking the mean of all the vectors in the group.
-4. Repeat these steps until the algorithm meets a stopping criterion, which can be reaching a set number of iterations or until the group centers no longer change much between iterations.
+1. Pick *k*, the number of groups (here with the elbow method, see below), and drop k random points in the data: they are the first centers of the groups.
+2. Put each user in the group whose center is closest.
+3. Move each center to the average of the users in its group.
+4. Repeat steps 2 and 3 until the centers barely move (or a set number of rounds is reached).
 
-Using the unsupervised learning algorithm, the following user segments were identified:
+K-means found these user segments:
 
-- **The Pessimists**: These users are much newer than average in terms of tenure, they have on average the fewest friends, and they are also the ones who leave the fewest reviews. However, they are characterized by leaving them negatively. They represent almost 20% of the base. Including them in campaigns is not recommended, because if the contact is not successful there is a chance of a very high collateral cost resulting from a bad review.
+- **The Pessimists**: much newer than average, with the fewest friends and the fewest reviews, and their reviews tend to be negative. They are almost 20% of the users. Better not to include them: if the campaign goes wrong, a bad review can cost a lot.
 
-- **The Optimists**: These users are on average the newest. Although they also do not leave a high number of reviews (about 1.7 times the first group), unlike the pessimists, they tend to leave them positively. They represent 44% of the total and a priori seem like an interesting segment for a campaign, because they will probably react positively.
+- **The Optimists**: the newest users on average. They don't write many reviews either (about 1.7 times the Pessimists), but their reviews tend to be positive. They are 44% of the users and look like a good target, because they will probably react well.
 
-- **The Friendly Ones**: This segment is very small, as it includes only 1.3% of the people, but it is a very particular one: these users stand out for their large number of friends, which makes their comments very valuable, because they will probably reach more people and can therefore boost the brand or, failing that, ruin it. So if they are included in a campaign, its quality should be guaranteed.
+- **The Friendly Ones**: a tiny segment (1.3% of the users), but a special one: they have lots of friends, so their reviews reach many people and can boost the brand, or hurt it. If they are included, the campaign must be top quality.
 
-- **The Reviewers**: These individuals are characterized by a high number of reviews per month and a high number of votes; they represent 3% of the base. Although they are few, they will probably leave a review of the product, so if they are included in a campaign, its quality should be guaranteed in order to improve brand image (through their review); however, they are not as high a priority as the group of **"The Friendly Ones"**.
+- **The Reviewers**: they write many reviews and votes per month, and are 3% of the users. They will probably review the product, so if they are included the campaign must be top quality, to earn good reviews. Still, they are a lower priority than the Friendly Ones.
 
-- **The Uninterested**: These individuals have been active for a long time, yet their activity is low, although higher than that of the newer individuals (the Pessimist and Optimist segments). Their average score is similar to the overall average. A campaign could be run on these individuals, but perhaps not a high-investment one.
+- **The Uninterested**: active for a long time, but with low activity (still higher than the new users: the Pessimists and the Optimists). Their average score is close to the overall average. They could get a campaign, but not an expensive one.
 
-Finally, the analysis identified different user segments, describing them and making recommendations on how to treat them. In addition, the exploratory analysis leads to the following conclusions:
-- 5% always vote 1 star (they may have rated only once); on the other hand, 20% vote 5 stars. Users tend to vote positively (above 3 stars).
+The data exploration also showed that:
+- 5% of users always give 1 star (maybe they rated only once), and 20% always give 5 stars. Overall, users tend to rate positively (above 3 stars).
 - Almost 70% of the users on this platform have 1 friend or none.
-- The users with the most reviews are also the ones who vote the most.
-- As the number of active months increases, the average activity of users increases.
+- Users who write the most reviews also vote the most.
+- Users who have been active for longer tend to be more active.
 
-If you found the Executive Summary interesting, the full analysis follows below. If you have any questions, you can write to joaquinamiel@gmail.com
+The full analysis follows below. For any questions, write to joaquinamiel@gmail.com.
 
 ## Exploratory data analysis and data cleaning
 
 > **In this section** we read the data, removed repeated user IDs (keeping the first row of each) and renamed the columns. We then created the variables reviews per month and votes per month, removed the outliers, plotted the distributions and the correlations, and dropped the original reviews and votes columns. The first rows of the data and the summary tables are shown below.
 
-In this phase the goal is to analyze the dataset provided in order to better understand the problem, evaluate how to approach it, determine whether any data cleaning is needed, and extract some insights.
+Here the goal is to get to know the data: understand the problem, decide how to approach it, see what needs cleaning, and find first insights.
 
-As we can see in the header of the data, there is no label that would let us build a model based on historical data. That is, one way to implement a marketing campaign strategy is to use historical data from users who were targeted by another campaign, or a similar or identical one, under a different model. For example, if the campaign were meant to offer a consumer loan, we could have historical data of users who already took part in loan campaigns; with it we could build a model to estimate whether the new customers who will receive the offer have a high or low probability of accepting a loan, and thus improve the profitability of the campaign.
+The data has no label that would let us learn from history. Normally, a campaign model learns from users who received a similar campaign before. For example, for a consumer loan offer, we would use past loan campaigns to estimate which new customers are likely to accept, and so make the campaign more profitable. Here we don't have that.
 
-Additionally, all the variables are numeric. Given this and what was stated above (that there is no prior knowledge), what we can do is implement an unsupervised clustering algorithm. In basic terms, the goal of clustering is to find different groups among the individuals. To do so, clustering algorithms find structure in the data so that individuals in the same cluster (or group) are more similar to each other than to those in different clusters. This allows us to describe them together (one description per cluster).
+Also, all the variables are numbers. With no history and only numbers, the best option is clustering: an unsupervised method that finds groups of users who are alike, so each group can be described as a whole.
 
 **Output:**
 
@@ -76,11 +76,11 @@ Additionally, all the variables are numeric. Given this and what was stated abov
 | 2EeuYhLuzvvrJ9v2pVrTjQ | 30 | 4 | 3.00 | 1 | 0 |
 | 5AwX3A1D-PJkkrWuRpmpCA | 49 | 19 | 4.30 | 36 | 2 |
 
-From the following descriptive table, the conclusions listed below can be drawn:
+The summary table below shows that:
 
-- There are no null values; if there were, the counts of non-null elements (count) would differ across the variables.
-- Although the variables Months Active and Average Review seem to have a "relative symmetry", the other variables are extremely skewed, which shows the presence of outliers. These need treatment because, since we are using distance-based algorithms, they can drastically alter the results.
-- The variables "Reviews per month" and "Votes per month" can be created; this makes the Reviews and Votes variables independent of the time an individual has been active.
+- There are no missing values (every column has the same count).
+- *Months Active* and *Average Review* look fairly balanced, but the other variables are very skewed (a few users have huge values), which points to outliers. They must be handled, because K-means works with distances and a few extreme users can change the results a lot.
+- We can create "reviews per month" and "votes per month". This way, a user who joined long ago doesn't look more active just because they had more time.
 
 **Output:**
 
@@ -97,8 +97,8 @@ From the following descriptive table, the conclusions listed below can be drawn:
 
 ### Outlier detection
 
-The Isolation Forest algorithm will be used to detect outliers in a multidimensional way. We work under the assumption that 1% of the data are outliers. A larger share would be a problem, since they would no longer be outliers but part of the overall data.
-This is not a problem here, since the goal of the analysis is to send data to marketing campaigns; it would be different if the goal were, for example, to detect fraud.
+To find outliers I used Isolation Forest, which looks at all the variables at once (a user can look normal in each column, but strange in the combination). I assumed that 1% of users are outliers: a much bigger share would not be "outliers" anymore, but a normal part of the data.
+Removing these few users is fine here, because the goal is to pick users for a marketing campaign. It would be different if we were looking for fraud, where the strange users are exactly the ones we want.
 
 **Output (1 = normal user, -1 = outlier):**
 
@@ -108,10 +108,10 @@ This is not a problem here, since the goal of the analysis is to send data to ma
 Name: outlier, dtype: int64
 ```
 
-Without the outliers detected by the Isolation Forest algorithm the data becomes much more regular; nevertheless, to apply unsupervised learning models the variables need to be standardized:
-- the variable reviews goes from a standard deviation of 112 to 72.
-- the variable votes goes from a standard deviation of 1471 to 268.
-- the variable friends goes from a standard deviation of 22 to 9.
+Without the outliers the data is much more regular (it still needs to be standardized before clustering, see Data modeling). The spread (standard deviation) drops a lot:
+- *reviews*: from a standard deviation of 112 to 72.
+- *votes*: from 1,471 to 268.
+- *friends*: from 22 to 9.
 
 **Output:**
 
@@ -126,7 +126,7 @@ Without the outliers detected by the Isolation Forest algorithm the data becomes
 | 75% | 53.000000 | 17.000000 | 4.500000 | 28.000000 | 2.000000 | 0.430000 | 0.673000 |
 | max | 118.000000 | 1352.000000 | 5.000000 | 7892.000000 | 187.000000 | 15.745000 | 85.783000 |
 
-The average-review histogram shows that approximately 5% always vote 1 star (they may have rated only once), while approximately 20% vote 5 stars. Finally, users tend to vote positively (see the chart to the right of 3).
+The average review histogram shows that about 5% of users always give 1 star (maybe they rated only once), and about 20% always give 5 stars. Most users rate positively (most of the chart is to the right of 3).
 
 ![Average review histogram](plots/plot1_average_review.png)
 
@@ -134,7 +134,7 @@ Almost 70% of the users on this platform have 1 friend or none.
 
 ![Total friends per person histogram](plots/plot2_friends_histogram.png)
 
-As the charts show, both the number of reviews per month and the number of votes per month drop off exponentially.
+Both reviews per month and votes per month drop fast: many users do very little, and only a few do a lot.
 
 ![Reviews per month histogram](plots/plot3_reviews_per_month.png)
 
@@ -142,11 +142,11 @@ As the charts show, both the number of reviews per month and the number of votes
 
 ### Correlation analysis
 
-As the following chart shows, there is an almost perfect correlation between votes per month and votes, and between reviews per month and reviews; for this reason we decide to drop the votes and reviews variables since, as mentioned earlier, they are influenced by how long the user has been active.
+*Votes per month* is almost perfectly correlated with *votes*, and *reviews per month* with *reviews*. So *votes* and *reviews* were dropped: they say the same thing, but are distorted by how long each user has been active.
 
-Additionally, there is a high correlation between reviews per month and votes per month, which tells us that the users who write more reviews per month are also the ones who vote the most.
+Reviews per month and votes per month are also highly correlated: users who write more reviews also vote more.
 
-Finally, there is a low positive correlation between the time active and the monthly average number of reviews. From this we can conclude that users who have been active for longer tend to be somewhat more active (an analogous conclusion can be drawn from the number of votes).
+Finally, time active and reviews per month have a low positive correlation: users who have been active for longer tend to be a bit more active (the same holds for votes).
 
 ![Correlation plot](plots/plot5_correlation.png)
 
@@ -154,13 +154,13 @@ Finally, there is a low positive correlation between the time active and the mon
 
 > **In this section** we standardized the five remaining variables, tried 1 to 14 groups to build the elbow chart, trained the final k-means model with 5 groups and saved each user's group number (0 to 4) in a new column. The inertia of the final model is shown below.
 
-In unsupervised analysis the sample should not be split into test and train (since there are no labels), but some form of standardization is needed; in this case a standard normalization will be used (subtract the mean and divide by the standard deviation).
+With no labels there is nothing to test against, so the data is not split into train and test. But it does need standardizing (subtract the average and divide by the standard deviation), so that every variable counts the same in the distances, whatever its unit.
 
-For data modeling, the k-means algorithm will be used, since it is the most widely used among unsupervised algorithms and also because all the variables considered are numeric, which makes this algorithm fit our need perfectly. Others could also be used, such as DBSCAN, which is also suitable for this type of scenario, although it is not as easy to explain.
+I used K-means, the most common clustering method, which works well when all the variables are numbers. Others, like DBSCAN, would also work here, but they are harder to explain.
 
-The first thing to determine is the number of groups to use. For this we use the inertia measure, which is the sum of squared errors; the errors come from using a cluster to represent each element rather than the specific element itself. Although it measures the quality of the segmentation, inertia tends to decrease as the number of clusters increases.
+First we need the number of groups. For that we use inertia: the sum of the squared distances from each user to the center of their group (how far users are from their group's "typical user"). Lower is better, but inertia always goes down when we add more groups, so the lowest value is not the answer.
 
-The "elbow method" is a chart that shows how inertia drops as the number of clusters grows, so the final value to use is a compromise between the error and the total number of clusters. Looking at the chart, the number of clusters to use is 5.
+The elbow method plots inertia against the number of groups and picks the point where adding more groups stops helping much (the "elbow" of the curve). Here that point is 5 groups.
 
 ![Elbow method (optimal k)](plots/plot6_elbow_method.png)
 
@@ -174,7 +174,7 @@ The "elbow method" is a chart that shows how inertia drops as the number of clus
 
 > **In this section** we also calculated the share and the number of users in each segment, and the average of all users to compare each segment against.
 
-The following table shows the averages of each variable for each label, which lets us describe each of the segments:
+The table below shows the average of each variable in each group, which lets us describe each segment:
 
 **Output:**
 
@@ -197,15 +197,15 @@ votes_per_month      1.172412
 dtype: float64
 ```
 
-- **The Pessimists (Segment 0)**: These users are much newer than average in terms of tenure, they have on average the fewest friends, and they are also the ones who leave the fewest reviews. However, they are characterized by leaving them negatively. They represent almost 20% of the base. Including them in campaigns is not recommended, because if the contact is not successful there is a chance of a very high collateral cost resulting from a bad review.
+- **The Pessimists (Segment 0)**: much newer than average, with the fewest friends and the fewest reviews, and their reviews tend to be negative. They are almost 20% of the users. Better not to include them: if the campaign goes wrong, a bad review can cost a lot.
 
-- **The Optimists (Segment 1)**: These users are on average the newest. Although they also do not leave a high number of reviews (about 1.7 times the first group), unlike the pessimists, they tend to leave them positively. They represent 44% of the total and a priori seem like an interesting segment for a campaign, because they will probably react positively.
+- **The Optimists (Segment 1)**: the newest users on average. They don't write many reviews either (about 1.7 times the Pessimists), but their reviews tend to be positive. They are 44% of the users and look like a good target, because they will probably react well.
 
-- **The Friendly Ones (Segment 2)**: This segment is very small, as it includes only 1.3% of the people, but it is a very particular one: these users stand out for their large number of friends, which makes their comments very valuable, because they will probably reach more people and can therefore boost the brand or, failing that, ruin it. So if they are included in a campaign, its quality should be guaranteed.
+- **The Friendly Ones (Segment 2)**: a tiny segment (1.3% of the users), but a special one: they have lots of friends, so their reviews reach many people and can boost the brand, or hurt it. If they are included, the campaign must be top quality.
 
-- **The Reviewers (Segment 3)**: These individuals are characterized by a high number of reviews per month and a high number of votes; they represent 3% of the base. Although they are few, they will probably leave a review of the product, so if they are included in a campaign, its quality should be guaranteed in order to improve brand image (through their review); however, they are not as high a priority as the group of **"The Friendly Ones"**.
+- **The Reviewers (Segment 3)**: they write many reviews and votes per month, and are 3% of the users. They will probably review the product, so if they are included the campaign must be top quality, to earn good reviews. Still, they are a lower priority than the Friendly Ones.
 
-- **The Uninterested (Segment 4)**: These individuals have been active for a long time, yet their activity is low, although higher than that of the newer individuals (the Pessimist and Optimist segments). Their average score is similar to the overall average. A campaign could be run on these individuals, but perhaps not a high-investment one.
+- **The Uninterested (Segment 4)**: active for a long time, but with low activity (still higher than the new users: the Pessimists and the Optimists). Their average score is close to the overall average. They could get a campaign, but not an expensive one.
 
 ## Assigning clusters to the dataset
 
@@ -223,7 +223,7 @@ dtype: float64
 
 ## Appendix: Python code
 
-Full code of the analysis, in the order it was run.
+Full code of the analysis, in the order it was run. It is the same code as in [`analysis.py`](analysis.py).
 
 ### A.1 Exploratory data analysis and data cleaning
 

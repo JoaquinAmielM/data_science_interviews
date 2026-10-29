@@ -1,4 +1,4 @@
-# antiVirusCompany - Data Automation Specialist task
+# Air Quality API, Sales Forecast and Campaign Dashboard
 
 Joaquin Amiel
 
@@ -8,6 +8,8 @@ Joaquin Amiel
 > - **Question:** 3 tasks: pull air quality data from an API, forecast units sold, and analyse marketing campaigns.
 > - **What I did:** called the API with Python, built a SARIMA forecast (a model that learns trend and yearly patterns) inside a function that updates itself with each new month, and made a Tableau dashboard.
 > - **Result:** the forecast misses by about 13 units on months of about 525 units. Only 149 of 277 campaigns (54%) earn back more than they cost, so spending can be cut.
+
+## The assignment
 
 ### Handling an API
  - Pull out Air Quality data from this [website](https://operator-ict.gitlab.io/golemio/documentation/)
@@ -28,14 +30,14 @@ Joaquin Amiel
 
 ---
 
-# 1. Handling an API
+## 1. Handling an API
 
-## 1.1 Pull out Air Quality data
+### 1.1 Pull out Air Quality data
 
 > **In this section** we install and import the `requests` library, set the API key in a header and call the Golemio endpoint `airqualitystations/history` asking for 1,000 observations. The answer comes back as JSON and is kept in memory for the next section.
 
-In order to pull out the Air Quality data:
-1. Create a user [here](https://api.golemio.cz/api-keys/auth/sign-in) and then generate your api key and copy the Active API key generated (YOUR_ACCESS_TOKEN).
+To pull the air quality data by hand:
+1. Create a user [here](https://api.golemio.cz/api-keys/auth/sign-in), then generate an API key (a password that lets a program use the API) and copy it (YOUR_ACCESS_TOKEN).
 2. Install [Postman](https://www.postman.com/downloads/) and create an account there.
 3. Create a new request:
  - Command: GET
@@ -45,19 +47,19 @@ In order to pull out the Air Quality data:
     - Value: YOUR_ACCESS_TOKEN
     - Add to: Header
 4. Click the button **Send**, to send the request and pull out the data.
-5. Save response to file, and create a json file (air_quality.json)
+5. Save the response as a JSON file (air_quality.json).
 
-In this case, I'm going to use python and the `requests` package (the code is in appendix A.1).
+Here I did the same with Python and the `requests` package (the code is in appendix A.1).
 
-## 1.2 Evolution of NO2 and PM10 particles
+### 1.2 Evolution of NO2 and PM10 particles
 
 > **In this section** we walk through the JSON answer and pull out, for every observation, the NO2 and the PM10 value (a `None` is stored when that particle is not in the record). We also check which stations the data comes from, and then plot the two series and a scatterplot of one against the other.
 
-In the API you can set the number of retrieved observations up to 1,000, also you can set up the date range (format ISO8601) and you can set up the sensorid (weather station). For more information, check this [link](https://api.golemio.cz/v2/docs/public-openapi/#/%F0%9F%8C%A6%20Air%20Quality/get_airqualitystations_history_)
+The API lets you ask for up to 1,000 observations, a date range (ISO 8601 format, like 2023-06-01) and a sensor id (the station). More details in the [API documentation](https://api.golemio.cz/v2/docs/public-openapi/#/%F0%9F%8C%A6%20Air%20Quality/get_airqualitystations_history_).
 
-One important point is that you need to dive into the json file to get the information that you need, also not every point contains the same information.
+The JSON answer is deeply nested, so you have to dig into it to get the values, and not every observation has the same fields.
 
-The data ingested contains only information from 1 station:
+All the data comes from a single station:
 
 **Output (station ids found):**
 
@@ -69,21 +71,21 @@ ASUCA
 
 *Both charts: the horizontal axis is the position of the observation in the series (0 to 1,000, in the order the API returned them) and the vertical axis is the concentration measured for that particle.*
 
-A priori, there is no clear relationship between NO2 and PM10 (although the set of points change all the time).
+At first sight there is no clear relationship between NO2 and PM10 (the API always returns the latest 1,000 observations, so this may change with new data).
 
 ![Scatterplot NO2 vs PM10](plots/plot2_scatter_no2_pm10.png)
 
 ---
 
-# 2. Forecasting
+## 2. Forecasting
 
-## 2.1 Build a model to predict data
+### 2.1 Build a model to predict data
 
 Using data in data_units_forecasting.csv predict next 3 values. Use methodology of your choice.
 
 > **In this section** we read the sales file, drop duplicated rows, check that the data is monthly and look at it over time. Then we split the time series into trend, seasonality and the rest (decomposition) to replace two outliers and the missing months by an estimate built from the trend plus the seasonality. After that we remove the trend and the seasonality by differencing (checking with the Dickey-Fuller test that the series is stable), read the ACF and PACF charts to guess the model orders, and try 40 SARIMA models ranked by AIC (a score that rewards a good fit and punishes extra parameters), keeping the third best because it is the first one whose coefficients are all significant. Finally we measure the error on the last 3 months, which were held out on purpose, and refit the model on the full series to predict the three months that come next.
 
-First of all, duplicate values were deleted (rows before and after):
+First, duplicate rows were deleted (number of rows before and after):
 
 **Output (rows, columns):**
 
@@ -92,7 +94,7 @@ First of all, duplicate values were deleted (rows before and after):
 (140, 2)
 ```
 
-The data has 3 null values:
+The data has 3 missing values:
 
 **Output (`describe` of units_sold):**
 
@@ -109,13 +111,13 @@ The data has 3 null values:
 
 The time series has only one record per month, so the data is monthly.
 
-From the following time series chart, it can be seen a trend and a seasonality component. Also, considering this chart (time series with trend and seasonality component) and the fact that the time series has almost 12 years of monthly information, it can be used a [SARIMA model](https://www.wisdomgeek.com/development/machine-learning/sarima-forecast-seasonal-data-using-python/) to forecast.
+The chart below shows a trend (sales go up over the years) and seasonality (a pattern that repeats every year). With that, and almost 12 years of monthly data, a [SARIMA model](https://www.wisdomgeek.com/development/machine-learning/sarima-forecast-seasonal-data-using-python/) is a good fit: it is built for series with trend and seasonality.
 
 ![Units sold over time](plots/plot3_units_sold_over_time.png)
 
-I'm going to take off the last 3 records to see how well the model predicts new data.
+The last 3 months are held out (not used for training), to check how well the model predicts data it has never seen.
 
-Change the index to the year/month and fill null values (by now) considering the last point with data (because in fact it can be get what happened in the past but not in the future):
+The month is set as the index, and for now the missing months are filled with the previous month's value (we can only use the past, never the future):
 
 **Output (first rows after reindexing):**
 
@@ -127,13 +129,13 @@ Change the index to the year/month and fill null values (by now) considering the
 | 2011-03-01 | 129.0 |
 | 2011-04-01 | 121.0 |
 
-From the time series decomposition, it can be seen that there is an upward trend and an annual seasonality (lag = 12) in the data, also a couple of points that looks like outliers. One in 2016 and another one in 2017.
+The decomposition (splitting the series into trend, seasonality and the rest) shows an upward trend, a yearly seasonality (lag = 12 months) and two points that look like outliers: one in 2016 and one in 2017.
 
 ![Time series decomposition before cleaning](plots/plot4_decomposition_before_cleaning.png)
 
 *From top to bottom: the original series, the trend, the yearly seasonality and the residual (what is left once trend and seasonality are taken out). The horizontal axis is the month.*
 
-Replace outliers, by an estimation based in the trend and the seasonality.
+The outliers are replaced by an estimate: the trend plus the seasonality of that month.
 
 **Output (outliers before the imputing):**
 
@@ -149,7 +151,7 @@ Replace outliers, by an estimation based in the trend and the seasonality.
 | 2016-07-01 | 297.0 |
 | 2017-08-01 | 282.0 |
 
-Replace previous missings. The missing values that were replaced by the last non missing value, now they are going to be replaced by the trend + seasonality (like the outliers).
+The missing months, filled before with the previous value, are now also replaced by the trend plus the seasonality (like the outliers).
 
 **Output (values that had been filled with the previous non missing value):**
 
@@ -175,7 +177,7 @@ Replace previous missings. The missing values that were replaced by the last non
 
 *Same four panels as before, now on the series with the outliers and the missing months replaced.*
 
-The trend and the seasonality component needs to be removed to do the analysis (to look at the PACF and ACF). The trend can be removed by differencing and verify through statistical tests like ADF (for trend).
+To read the ACF and PACF charts (used to choose the model settings), the trend and the seasonality must be removed first. The trend is removed by differencing (subtracting from each month the month before), and the ADF (Augmented Dickey-Fuller) test checks whether a trend is still there.
 
 **Output (Dickey-Fuller test on the original series):**
 
@@ -190,11 +192,11 @@ dtype: float64
 
 ![Differenced time series with trend removed](plots/plot6_differenced_series.png)
 
-From the following chart, It can be seen after remove the trend how different are the units sold each month, suggesting a seasonality component. In August, September and October the units sold are less than in the rest of the year.
+With the trend removed, the chart below shows that each month sells differently, which confirms the seasonality: August, September and October sell less than the rest of the year.
 
 ![Box plots of units sold per month after trend removal](plots/plot7_boxplot_units_per_month.png)
 
-Now the p-value is less than the critical value of 0.05. Hence, it can be confirmed that the series is now trend stationary. For more information [Dickey-Fuller test](https://en.wikipedia.org/wiki/Dickey%E2%80%93Fuller_test).
+Now the p-value is below 0.05, so the series is stationary (no trend left: its average stays stable over time). More about the [Dickey-Fuller test](https://en.wikipedia.org/wiki/Dickey%E2%80%93Fuller_test).
 
 **Output (Dickey-Fuller test on the differenced series):**
 
@@ -207,19 +209,19 @@ Number of Observations Used    125.000000
 dtype: float64
 ```
 
-Since the data is showing an annual seasonality, I need to differenciate at a lag 12, i.e yearly.
+Since the data has a yearly seasonality, it is also differenced at lag 12 (each month minus the same month one year before).
 
 ![Differenced time series with trend and seasonality removed](plots/plot8_seasonally_differenced_series.png)
 
-From ACF and PACF Plots it can be infer the parameters of the SARIMA model. A typical SARIMA model equation looks like the following:
+The ACF and PACF charts (how much the series is correlated with its own past values) help to choose the settings of the SARIMA model, which is written like this:
 
 - $SARIMA\ (p,d,q)\times(P,D,Q)_{12}$
 
 The parameters for these types of models are as follows:
 
-- $p$ and seasonal $P$: indicate the number of AR terms (lags of the stationary series)
-- $d$ and seasonal $D$: indicate differencing that must be done to stationary series
-- $q$ and seasonal $Q$: indicate the number of MA terms (lags of the forecast errors)
+- $p$ and seasonal $P$: number of AR terms (how many past values the model uses)
+- $d$ and seasonal $D$: how many times the series is differenced
+- $q$ and seasonal $Q$: number of MA terms (how many past forecast errors the model uses)
 
 ![Autocorrelation (ACF)](plots/plot9_acf.png)
 
@@ -227,7 +229,7 @@ The parameters for these types of models are as follows:
 
 *In both charts the horizontal axis is the lag in months and the vertical axis is the correlation of the series with itself at that lag; the shaded band is the range where a value can be considered noise.*
 
-it can be seen that:
+From the charts:
 
 - For ACF plot, initial spikes at lag = 1 and a small seasonal spike at lag = 12 and 13, which means a probable AR order of 1 and seasonal AR order of 1
 
@@ -237,7 +239,7 @@ So, our probable SARIMA model equation can be:
 
 - $SARIMA\ (1,1,4)\times(1,1,1)_{12}$
 
-Now, I'm going to run different models to end up with the model with the best AIC. 40 combinations of parameters were tried and these are the best five:
+Then 40 combinations of settings were tried and ranked by AIC (a score that rewards a good fit and punishes extra parameters; lower is better). These are the best five:
 
 **Output (top 5 models by AIC, lower is better):**
 
@@ -277,9 +279,9 @@ Prob(H) (two-sided):                  0.77   Kurtosis:                         5
 ===================================================================================
 ```
 
-I end up using the 3rd best model because the coefficient of the best one were not significatives.
+I used the 3rd best model, because it is the first one whose coefficients are all significant (clearly different from zero); the two better ones had coefficients that were not.
 
-Jarque-Bera test shows that the residual doesn't follow a normal distribution, it present a problem with the kurtosis, not with the symmetry (i guess that it is related with a couple of values with high residuals).
+The Jarque-Bera test says the residuals (the model's mistakes) are not normally distributed. The problem is kurtosis (too many big mistakes), not symmetry, probably because of a couple of months with big residuals.
 
 **Output (model used, SARIMA(1, 1, 1) x (0, 1, 1) 12):**
 
@@ -308,13 +310,13 @@ Prob(H) (two-sided):                  0.75   Kurtosis:                         5
 ===================================================================================
 ```
 
-Looking at the diagnostic plots, it can be seen a couple of residuals with unusual values (not between -3 and 3) and i guess that this values are causing the non normality distribution. The correlogram on the bottom right suggests that there is no autocorrelation in the residuals, and so they are effectively white noise.
+The diagnostic charts show a couple of residuals with unusual values (outside -3 to 3), which probably cause the non-normality. The correlogram (bottom right) shows no autocorrelation in the residuals: they look like white noise (random, with no pattern left to learn), which is what we want.
 
 ![Model diagnostics](plots/plot11_model_diagnostics.png)
 
 ![Forecast of the last year](plots/plot12_forecast_2022.png)
 
-Now, Considering the last 3 observations that it was set apart, the root mean squared error is 12.87, so it can be expected an error of $\pm 13$ units sold in our predictions. Considering that the mean of the last 3 observations is 525 units, the error in the predictions is 2.45%.
+On the 3 held-out months, the RMSE (root mean squared error: the typical size of a mistake) is 12.87, so we can expect errors of about $\pm 13$ units sold. With an average of 525 units in those months, that is a 2.45% error.
 
 **Output (error on the 3 months held out):**
 
@@ -326,9 +328,9 @@ The mean of the last 3 observations is 525.0
 The expected error in the predictions is 2.45 %
 ```
 
-Predicting 3 new observations, i need to rebuilt the SARIMA model consider now the last 3 points. The model is then saved in a Pickle file so it can be reused later.
+To predict the next 3 months, the model is trained again, now including the 3 held-out months. Then it is saved in a pickle file (a file that stores the Python object as it is), to reuse it later.
 
-Points predicted (2022/10 till 2022/12):
+Months predicted (2022/10 to 2022/12):
 
 **Output (prediction, confidence interval and real value):**
 
@@ -341,15 +343,15 @@ Points predicted (2022/10 till 2022/12):
 
 ![Forecast of the next 3 months](plots/plot13_forecast_next_3_months.png)
 
-## 2.2 Extend the methodology
+### 2.2 Extend the methodology
 
 > **In this section** we wrap the whole thing in one function that can be called every day or on demand: it loads the saved model and the saved data, reads the new file, compares what the model had predicted against what really happened (absolute and percentage error), adds the new observation, refits the model, predicts the next 3 months and saves the updated model and data. The function is then run twice, first with `data_units_forecasting_t1.csv` and then with `data_units_forecasting_t2.csv`.
 
-First of all, i would like to mention that the data is not daily, it's monthly. So, what I'm going to do in this step is:
-1. Look at how the prediction was
-2. Update the model with the new data
-3. Predict the next 3 month based in the model + new data
-4. Save the new model and data updated
+Note: the data is monthly, not daily, so the routine runs once per new month. Each time, it:
+1. Checks how good the previous prediction was.
+2. Updates the model with the new data.
+3. Predicts the next 3 months.
+4. Saves the updated model and data.
 
 **Output (run 1, `data_units_forecasting_t1.csv` — how the previous prediction did):**
 
@@ -379,75 +381,77 @@ First of all, i would like to mention that the data is not daily, it's monthly. 
 | 2023-01-01 | 431.0 | 399.0 | 464.0 |
 | 2023-02-01 | 468.0 | 434.0 | 502.0 |
 
-## 2.3 Future steps
+### 2.3 Future steps
 
-- Compare the results against a baseline (can be the trend or the trend + seasonality to see the real model performance)
-- Solve the issue with the normality assumption and the outliers.
-- Check if there is some information about missing months (with the proper team, i.e. marketing, sales, etc)
-- Add test to check seasonality, now it was only used DF test for trends.
+- Compare the results against a baseline (a simple forecast, like the trend, or the trend plus the seasonality) to see how much the model really adds.
+- Fix the non-normal residuals and the outliers.
+- Ask the right teams (marketing, sales, etc.) why some months are missing.
+- Add a test for seasonality: so far only the Dickey-Fuller test was used, and it only checks the trend.
 
 ---
 
-# 3. Analysis
+## 3. Analysis
 
-The dashboard was made in Tableau, it is in [Tableau Public](https://public.tableau.com/views/MarketingCampaignPerformance-JoaquinAmiel/MarketingCampaignPerformance?:language=en-US&:display_count=n&:origin=viz_share_link). The analysis was made here. The currency considered is euros.
+The dashboard was made in Tableau and is on [Tableau Public](https://public.tableau.com/views/MarketingCampaignPerformance-JoaquinAmiel/MarketingCampaignPerformance?:language=en-US&:display_count=n&:origin=viz_share_link); the analysis is below. All amounts are in euros.
 
-In this particular scenario, is it going to be considered a last touch attribution model (LTA), meaning that all the credit from an event (conversion) goes to the last customer touchpoint (is not considering the customer journey). This is not the best since there are some campaigns focus on awareness and with this model it can't access the impact of those ones. However is a good point to start.
+I used last touch attribution (LTA): all the credit for a conversion goes to the last ad the customer touched, ignoring the rest of their journey. This is not ideal, because some campaigns aim at awareness (making people know the brand), and this model can't measure their impact. But it is a good starting point.
 
-Is worth to mention that the results could be enriched with some features such as Source, Medium, Publisher/Channel, Country or Region, Target/ Population Segment, Platform, Campaign Objective (Awareness or Conversions) etc.
+The analysis would improve with more fields, such as source, medium, publisher/channel, country or region, target segment, platform and campaign objective (awareness or conversions).
 
-The fields are the following:
-- **id_banner**: Banner identifier, in this dataframe, the banner is the primary key.
-- **id_campaign**: campaign identifier, some campaigns has more than 1 banner associated.
+The data has these fields:
+- **id_banner**: banner id; each row is one banner.
+- **id_campaign**: campaign id; some campaigns have more than one banner.
 - **Impressions**: how many times the banner was displayed.
-- **Clicks**: how many times a person click on a banner.
-- **Spent**
-- **Total Conversions**
-- **LTV (Long term value)**: how much revenue a business can reasonably expect over the average lifespan of a single customer. This information is at campaign level.
+- **Clicks**: how many times someone clicked the banner.
+- **Spent**: money spent on the banner.
+- **Total Conversions**: how many people became clients.
+- **LTV (Lifetime Value)**: how much money a client is expected to bring over their whole time as a client. It is given per campaign.
 
-Also, I created the following calculated fields from the previous ones:
-- **CTR (ClickThrough Rate)**: number of clicks that an ad receives divided by the number of times your ad is shown $CTR = \frac{Clicks}{Impressions}*100$.
-- **CPM (cost per 1000 Impressions)**: the cost of showing the banner 1,000 times, $CPM = \frac{Spent}{Impressions}*1000$.
-- **CPC (cost-per-click)**: The average amount that the company has been charged for a click on an ad. Average cost-per-click (avg. CPC) is calculated by dividing the total cost of all the company clicks by the total number of clicks. $CPC = \frac{Spend}{Clicks}$.
-- **Conversion Rate**: is the percentage of visitors who complete a desired action, in this case is to became a client. The formula is $Conversion\ Rate = \frac{Total\ Conversions}{Clicks}$.
-- **CAC (Customer Adquisition Cost)**: or Cost per adquisition, how much money each client costs. It is calculated as $CAC = \frac{Spent}{Total\ Conversions}$
-- **ROAS (Return on Ad Spend)**: return on its marketing investment, in this case, it is calculated as $ROAS = \frac{LTV}{CAC} - 1$.
+From these, I calculated:
+- **CTR (Click-Through Rate)**: the share of times the ad was shown that ended in a click, $CTR = \frac{Clicks}{Impressions}*100$.
+- **CPM (cost per 1,000 impressions)**: the cost of showing the banner 1,000 times, $CPM = \frac{Spent}{Impressions}*1000$.
+- **CPC (cost per click)**: the average price paid for each click, $CPC = \frac{Spend}{Clicks}$.
+- **Conversion Rate**: the share of clicks that end with a new client, $Conversion\ Rate = \frac{Total\ Conversions}{Clicks}$.
+- **CAC (Customer Acquisition Cost)**: how much each new client costs, $CAC = \frac{Spent}{Total\ Conversions}$.
+- **ROAS (Return on Ad Spend)**: the return on the marketing money. Here it is $ROAS = \frac{LTV}{CAC} - 1$: above 0 means a client brings more than they cost.
 
-This calculations are going to help us to identify failures/ points of improvements and understand where the campaigns or banners were performing well and where they weren't. For instance, some banners/campaigns can be really good to get prospects but not to convert clients or viceversa. Also some banners/campaigns can be really good to get clients, but the CLV of this client can be poor and others can be really good to get high quality clients.
+These numbers show where campaigns and banners work and where they don't. For example, some are great at getting people interested but bad at turning them into clients, or the other way around. And some bring many clients, but clients with a low LTV, while others bring fewer but better clients.
 
-From the first part of the dashboard, it can be analised the following situation:
+The first part of the dashboard shows that:
 
-- The company has 277 campaigns, but only 149 (53.7%) have a positive ROAS (campaign ROAS filter >0). Considering that all this campaigns are focus in conversions, we can start reducing the number of campaigns. Also, if we only consider campaigns with positive ROAS, the ROAS increase from 0.21% to 8.54%. However, one interesting fact is that the company CAC increase from 20.86 € to 23.33 €, concluding that the company should focus on the quality of the new clients and not only in increase the number of conversions.
+- The company has 277 campaigns, but only 149 (53.7%) have a positive ROAS. Since all these campaigns aim at conversions, the company can start by cutting campaigns. Keeping only the campaigns with a positive ROAS, the ROAS goes up from 0.21% to 8.54%. But, interestingly, the CAC also goes up, from 20.86 € to 23.33 €: the company should care about the quality of new clients, not only their number.
 
-- In terms of revenue, 37 campaigns are getting the 50.5% of the revenue. however some of them are having ROAS negative. The spend is just as concentrated: the same 37 campaigns account for 50.0% of the total spend. So, the company can optimize their spending. Also, the company can focus on campaigns with high revenue or high spend first and invest in those campaigns with more ROAS and stop spend in campaigns with negative roas.
+- 37 campaigns bring 50.5% of the revenue, and the same 37 campaigns take 50.0% of the spend, but some of them have a negative ROAS. So spending can be optimized: start with the campaigns with the most revenue or spend, put more money in those with a high ROAS, and stop spending on those with a negative ROAS.
 
-- Considering the conversion funnel: The company CTR is 0.0176% which can be considered as low (inclusive for google adwords). However the conversion rate is 7.4% which is not bad. It would be great to know if the company is paying per clicks or per impressions to figure out if we should target better our impressions to optimize costs.
+- Along the conversion funnel: the CTR is 0.0176%, which is low (even for Google Ads), but the conversion rate is 7.4%, which is not bad. It would help to know if the company pays per click or per impression: if it pays per impression, targeting the ads better would cut costs.
 
 ![Dashboard - overview](plots/plot14_dashboard_overview.png)
 
-The second part of the dashboard was made to help the marketing team to investigate the performance over different campaigns.
+The second part of the dashboard helps the marketing team dig into the performance of each campaign.
 
-In CTR vs Conversion Rate, basically the quadrants help to identify:
+In the CTR vs Conversion Rate chart, each quadrant (corner) points to a different action:
 
 | Result      | Action |
 | ----------- | ----------- |
-| Low CTR, Low Conversion Rate | Campaign where people who see the banner but are not interested in the product. maybe there is some problem with the target audience. |
-| Low CTR, High Conversion Rate   | Investigate if there is a problem in some banners or something, because the people who click there have high probability of conversions. The target audience looks right |
-| High CTR, Low Conversion Rate | Clickbait campaign, look at why people are clicking and not converting (probably it is focus in a wrong target audience) |
-| High CTR, High Conversion Rate | Campaigns that the company want to keep and replicate |
+| Low CTR, Low Conversion Rate | People see the banner but are not interested in the product. Maybe the target audience is wrong. |
+| Low CTR, High Conversion Rate | The people who click are very likely to convert, so the audience looks right. Check if something is wrong with the banners themselves. |
+| High CTR, Low Conversion Rate | Clickbait: find out why people click but don't convert (probably the wrong target audience). |
+| High CTR, High Conversion Rate | Campaigns to keep and copy. |
 
-ROAS vs Spent:
-  - This chart, can be splitted between profitable and non profitable campaigns and campaigns where the company is spending a lot and where the company isn't. probably in order to optimize the way that the company is working can be good to increase the spend in campaings with positive ROAS and where we are spending a significant amount of money now (consider that manage a big number of campaigns is not a piece of cake)
+In the ROAS vs Spent chart:
+  - Campaigns split into profitable and unprofitable, and into big and small spenders. To improve, the company could spend more on the campaigns that already have a positive ROAS and a big budget (managing a lot of small campaigns is hard work).
 
 ![Dashboard - campaign performance](plots/plot15_dashboard_campaign_performance.png)
 
-Finally, this view is really interesting, because it can be seen per campaign which banners the company is spending on but whose ROAS is negative, so it is a really good to optimize the costs and the revenue (spending more in banners with high ROAS and investigate what is happening with campaigns with negative ROAS). in campaign 144724, Banners with the id 1122202 and 1122205 are a really good example of this user case.
+Finally, this view shows, for each campaign, the banners that get money but have a negative ROAS. That makes it easy to cut costs and raise revenue: spend more on banners with a high ROAS, and look into what is going wrong with the negative ones. In campaign 144724, banners 1122202 and 1122205 are a good example.
 
 ![Dashboard - effectiveness of campaigns and banners](plots/plot16_dashboard_effectiveness.png)
 
 ---
 
-# Appendix: Python code
+## Appendix: Python code
+
+The code below is the same as in [`analysis.py`](analysis.py), grouped by the sections of this report. The only difference: here the file paths still point to the original Google Drive folder, while `analysis.py` reads from `data/` and saves to `outputs/`.
 
 ### A.1 Pull out Air Quality data
 

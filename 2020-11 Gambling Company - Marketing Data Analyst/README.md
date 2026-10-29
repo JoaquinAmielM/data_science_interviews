@@ -23,59 +23,59 @@ The aim is to predict the house prices from a specific dataset using a regressio
 
 3. **Regression analysis**, i.e. which are the factors that influence the sale price of a house? You'll need to define those and then interpret the results. (NB: As mentioned, you could choose to test in your model just few of all variables in the dataset, but if you choose to do so, please justify your choice.)
 
-**Note**: It's assumed that the house prices are in constant prices not in current prices.
+**Note**: we assume the prices are constant prices (already adjusted for inflation), not current prices.
 
 ### 1.2 Executive brief
 
 **1. Data management**
 
 - Missing values were replaced.
-- Columns with only one value or with the vast majority with only one value was deleted.
-- Categories with less than 30 cases is considered as Other because the amount is not enough for draw significant conclusions from this category.
-- Some categorical variables was transformed into ordinals by scoring them, for example: ('No':0, 'Po':1, 'Fa':2, 'TA':3, 'Gd':4, 'Ex':5).
-- Changes in Garage year built, YearRemodAdd and YrSold were made in order to mantain the coherence in the dataframe (for example year sold can't be older than year built).
-- Variable which start with numbers were renamed.
-- Variables that are a function of other variables were deleted.
-- Variables with almost all values equal zero were deleted.
-- In order to avoid multicollinearity, variables highly correlated were deleted (chosen one).
-- In order to deal with outliers, cut-off points were established from which the data were truncated.
+- Columns where (almost) every house has the same value were deleted, because they can't explain differences in price.
+- Categories with fewer than 30 houses were merged into "Other": with so few houses we can't draw reliable conclusions about them.
+- Some text variables were turned into scores (an ordinal scale), for example: ('No':0, 'Po':1, 'Fa':2, 'TA':3, 'Gd':4, 'Ex':5), from "none" to "excellent".
+- Some years were fixed so they make sense together (for example, a house can't be sold before it was built): garage year built, remodel year (*YearRemodAdd*) and year sold (*YrSold*).
+- Variables whose name starts with a number were renamed.
+- Variables that can be calculated from other variables were deleted (they add no new information).
+- Variables that are zero for almost every house were deleted.
+- When two variables carried almost the same information (high correlation), one of them was deleted. This avoids multicollinearity, which makes the model's numbers unstable and hard to read.
+- Outliers (values much bigger than the rest) were capped: above a chosen cut-off, the value is set to the cut-off.
 
 **2. Descriptive statistics**
 
-- From the correlation plot between dependent variables (X):
-  - OverallQual has high positive correlation with year built / YearRemodAdd, KitchenQual, ExterQual, BsmtQual it means that if a person want to improve a house overall quality is advisable to made a remodelation especially in order to improve the kitchen, the basement or the external aspect.
-  - Garage quality are well correlated with garage area.
+- From the correlation plot between the explanatory variables (X, the features of the house):
+  - *OverallQual* (overall quality) goes up together with the year the house was built or remodelled (*YearRemodAdd*) and with the quality of the kitchen (*KitchenQual*), the exterior (*ExterQual*) and the basement (*BsmtQual*). So, to raise a house's overall quality, a remodel focused on the kitchen, the basement or the exterior is a good idea.
+  - Garage quality goes up together with garage area.
 - From the correlation plot with the sale price (y):
-  - The sale price is highly correlated with the Number of bedrooms above basement level and Lot size, this factors are not highly correlated between then. For these reasons, it is expectable that this variables will play a crucial role in the final model. Also if somebody wants to increase a house price needs to increase the number of bedrooms or buy more land.
-  - The sale price is moderately correlated with GrLivArea (Above grade living area square feet) and TotRmsAbvGrd (Total rooms above grade without include bathrooms). However, these two variables are highly correlated and probably one of these will play an important role in the regression, but probably one of them won't make an impact in the model.
-- It can be seen that in the months of February to April the sale value is on average lower than the sale value between May and August, then start to increase till December.
-- From the descriptive analysis it can be concluded that the following data increment the house value:
+  - The sale price is highly correlated with the number of bedrooms above the basement and with the lot size, and these two are not correlated with each other. So both should play a key role in the final model. In plain words: to raise a house's price, add bedrooms or buy more land.
+  - The sale price is moderately correlated with *GrLivArea* (living area above ground, in square feet) and *TotRmsAbvGrd* (rooms above ground, not counting bathrooms). But these two carry almost the same information, so probably only one of them will matter in the model.
+- Houses sold from February to April are, on average, cheaper than those sold from May to August. After that, prices rise again until December.
+- Looking at averages, these features go with a **higher** price:
   - Residential Low Density houses.
-  - Cul-de-sac lot config.
-  - Duplex.
+  - Houses on a cul-de-sac (a dead-end street).
+  - Duplexes.
   - Properties with two stories or more.
-  - Hip Roofstyle.
-  - Exterior covering on house with Brick and Plywood.
-  - Standard Circuit Breakers & Romex electrical system.
-  - Shed.
+  - Hip roofs.
+  - Brick or plywood exterior covering.
+  - Standard circuit breaker (Romex) electrical system.
+  - Having a shed.
   - New houses.
-- From the descriptive analysis it can be concluded that the following data decrement the house value:
+- And these go with a **lower** price:
   - Floating Village Residential and Residential Medium Density houses.
-  - Houses with a pave alley.
-  - Townhouse.
+  - Houses with a paved alley.
+  - Townhouses.
   - Split Foyer houses.
-  - Exterior covering on house with Cement Board or Metal Siding.
-  - Fuse electrical system.
+  - Cement board or metal siding exterior covering.
+  - Fuse-based electrical system.
   - Houses sold by contract.
 
-These variables may or may not be in the final model, since the model considers their effect in the presence of other variables, the descriptive analysis only considers their isolated marginal effect.
+These features may or may not end up in the final model: the averages look at each feature alone, while the model looks at all of them together.
 
 **3. Regression analysis**
 
-- Lasso Regression returns betters results in the test set and the difference between result in training and test set are less (less difference between results in training and test set derive in less overfitting). For these reasons, Lasso regression was selected as the technique for model this data.
-- Another aspect of Lasso Regression is that for variables with small or non significant beta coefficients, the algorithm is able to predict the outcome fairly well even without the variable, lasso is prone to removed the variable from the equation by setting a zero coefficient.
-- The model meets the assumptions required by the multivariate linear regression technique.
-- The model improves the estimation of the baseline obtaining a Mean Absolute Error of 1,162 USD, that's mean that the model estimate the house value with an expected error of 1,162 USD (baseline: 12,817 USD). Considering that the house price is in average 178,777 USD, the estimation is considered as very good.
+- Lasso has the smallest error on the test set (houses the model never saw), and the smallest gap between its training and test errors. A small gap means less overfitting: the model learned general patterns instead of memorizing the training houses. So lasso was chosen for this data.
+- Another plus of lasso: when a variable barely helps, lasso sets its coefficient (its weight in the formula) to zero, which removes it from the model and keeps the model simple.
+- The model meets the main assumptions of linear regression (checked in section 4.3.3).
+- The model beats the baseline (giving every house the average price) by far. Its Mean Absolute Error (MAE) is 1,162 USD: on average it misses a house's price by 1,162 USD, against 12,817 USD for the baseline. With an average price of 178,777 USD, that is a very good estimate.
 - The factors that influence the sale price of a house are:
   - **LotFrontage**: Linear feet of street connected to property.
   - **LotArea**: Lot size in square feet.
@@ -90,22 +90,22 @@ These variables may or may not be in the final model, since the model considers 
   - **GarageType**: Garage location.
   - **SaleType**: Type of sale.
 
-In general, a regression coefficient $\beta_{k}$ is interpreted as the marginal effect produced on the dependent variable (sale price) when the k-th regressor is increased by one unit, while holding the other predictors in the model constant. Thus the regression coefficient interpretation are the following (**always remain constant the rest of variables**):
+How to read each coefficient ($\beta_{k}$): it is how much the price changes when that variable goes up by one unit, **while all the other variables stay the same**:
 
-- **LotFrontage**: For every linear foot of street connected to property that is increased, the price of the house increases by 2.29 USD.
-- **LotArea**: For every square foot that is increased, the price of the house increases by 1.87 USD.
-- **BsmtFullBath**: For each basement full bathrooms that is built, the price of the property decrease by 149.08 USD (This decrease could be related with the inverse relationship between the amount of bathroom in the basement and the amount of bathrooms in the rest of the house, in fact, is not so confortable to have a bathroom in the basement).
-- **BedroomAbvGr**: For every new bedroom above basement level in the house, the price of the house increases by 12,906.88 USD.
-- **Neighborhood**: If the house is located in Mitchel, the price of the house increase by 241.27 USD (compare with the rest of Neighborhoods).
-- **BldgType**: If the type of dwelling of the house is Townhouse, the price of the house increase by 350.55 USD (compare with the rest of type of dwelling).
-- **Exterior2nd**: If the second exterior covering on house material (if more than one material) is Vinyl Siding, then the price of the house decrease by 116.38 USD (compare with the rest of second exterior covering).
-- **MasVnrType**: If the masonry veneer type of the house is stone, the price of the house decrease by 199.17 USD (compare with the rest of masonry veneer type).
-- **Foundation**: If the type of foundation is Cinder Block, the price of the house increase by 35.08 USD (compare with the rest of type of foundation).
-- **GarageType**: If Garage is in the Basement, in the Car Port or the house has more than one type of garage, the price of the house increase by 732.28 USD.
-- **SaleType**: If the type of sale is Contract, the price of the house decrease by 727.83 USD (compare with type of sale of warranty, court and other). Also if the house is just constructed and sold, the price of the house increase by 673.28 USD (compare with type of sale of warranty, court and other).
-- **MoSold**: Considering the months of January (1) to December (12), for each month that is expected to make the sale, the price of the house increases on average by 1,137.00 USD. Since the prices of products are set by bid and demand, months with more demand lead to an increase in prices.
+- **LotFrontage**: each extra foot of street touching the property adds 2.29 USD to the price.
+- **LotArea**: each extra square foot of land adds 1.87 USD.
+- **BsmtFullBath**: each full bathroom in the basement lowers the price by 149.08 USD. A possible reason: a house with more bathrooms in the basement has fewer in the rest of the house, and a basement bathroom is less comfortable.
+- **BedroomAbvGr**: each extra bedroom above the basement adds 12,906.88 USD.
+- **Neighborhood**: a house in Mitchel is worth 241.27 USD more than in the other neighbourhoods.
+- **BldgType**: a townhouse is worth 350.55 USD more than other types of dwelling.
+- **Exterior2nd**: if the second exterior covering (when there is more than one material) is vinyl siding, the price drops by 116.38 USD compared with other coverings.
+- **MasVnrType**: a stone masonry veneer (a decorative stone layer on the walls) lowers the price by 199.17 USD compared with other types.
+- **Foundation**: a cinder block foundation adds 35.08 USD compared with other foundations.
+- **GarageType**: a garage in the basement, a car port, or more than one type of garage adds 732.28 USD.
+- **SaleType**: a sale by contract lowers the price by 727.83 USD, and a brand-new house adds 673.28 USD (both compared with warranty, court and other sales).
+- **MoSold**: for each month later in the year (January = 1 to December = 12), the price goes up by 1,137 USD on average. Prices follow supply and demand, so months with more buyers bring higher prices.
 
-Despite the fact that Lasso Regression methods returns better results than the baseline, others regression techniques was tested and returned worse results than lasso regression.
+Other models (Random Forest and XGBoost) were also tested, but they did worse than lasso.
 
 ## 2. Data management
 
@@ -113,7 +113,7 @@ Despite the fact that Lasso Regression methods returns better results than the b
 
 > **In this section** we load the Excel file from the gamblingCompany drive folder: one sheet with the sale price and another one with the characteristics of each valued house, both indexed by the house Id. The first rows and the size of the characteristics table were checked.
 
-First of all, we read the excel file. One sheet contains information about the sale price and the other contain information about the characteristic of each valued house.
+First, we read the Excel file. One sheet has the sale price and the other has the features of each house.
 
 The dataset contains 1,459 houses and 79 variables.
 
@@ -175,9 +175,9 @@ The dataset contains 1,459 houses and 79 variables.
 
 > **In this section** we drop six columns: *Utilities*, *Street*, *Condition2*, *RoofMatl*, *Heating* and *PoolQC*.
 
-- Variables with only one value (1 categories with few NaN, i.e. *Utilities*) because this make the model overfitting and this should be avoided.
-- Variables with a vast majority of houses with only one value should be deleting (*Street*, *Condition2*, *RoofMatl*, *Heating*).
-- Variables with a vast majority of NaNs should be deleted (i.e. *PoolQC*).
+- Variables with only one value (*Utilities*: one category plus a few blanks), because a column that never changes can't explain anything and only adds noise (it can lead to overfitting).
+- Variables where the vast majority of houses share one value (*Street*, *Condition2*, *RoofMatl*, *Heating*).
+- Variables that are mostly empty (NaN = missing value), like *PoolQC*.
 
 #### 2.2.3 Replace missing values
 
@@ -245,7 +245,7 @@ TA    1328                                               Oth         5
 
 > **In this section** we turn the quality and condition variables into numbers (an ordinal scale), so the model uses one column per variable instead of one column per category.
 
-Some categorical variables was transformed into ordinals by scoring them, for example: ('No':0, 'Po':1, 'Fa':2, 'TA':3, 'Gd':4, 'Ex':5). That reduce the number of parameters in the model.
+Some text variables were turned into scores (an ordinal scale), for example: ('No':0, 'Po':1, 'Fa':2, 'TA':3, 'Gd':4, 'Ex':5). This way each variable is one number instead of one 0/1 column per category, so the model has fewer parameters (numbers to learn).
 
 #### 2.2.5 Analyse the rest of the categorical variables
 
@@ -287,7 +287,7 @@ Gilbert     86                                           Blueste      8
 
 > **In this section** we merge the small categories into bigger ones, either with a similar category (the *Wd Sdng* / *WdShing* / *Wd Shng* entries become one *Wood* category, which also solves the spaces and the typo of the exterior covering) or into an *Other* category. After the grouping, none of the 24 categorical variables that are left has a tiny category.
 
-Categories with less than 30 cases is considered as Other (or with other similar) because the amount is not enough for draw significant conclusions from this category.
+Categories with fewer than 30 houses were merged into "Other" (or into a similar category), because with so few houses we can't draw reliable conclusions.
 
 **Output (summary of the categorical variables after the grouping):**
 
@@ -378,7 +378,7 @@ Categories with less than 30 cases is considered as Other (or with other similar
 | MoSold        |    1459 |    6.104 |    2.722 |     1 |    4    |    6   |     8    |    12 |
 | YrSold        |    1459 | 2007.77  |    1.302 |  2006 | 2007    | 2008   |  2009    |  2010 |
 
-Changes in *Garage year built*, *YearRemodAdd* and *YrSold* were made in order to mantain the coherence in the dataframe (for example year sold can't be older than year built).
+The years in *GarageYrBlt*, *YearRemodAdd* and *YrSold* were fixed so they make sense together (for example, a house can't be sold before it was built).
 
 #### 2.3.2 Replace NA
 
@@ -386,24 +386,24 @@ Changes in *Garage year built*, *YearRemodAdd* and *YrSold* were made in order t
 
 #### 2.3.3 Rename variable
 
-Variable which start with numbers were renamed (*1stFlrSF* to *FstFlrSF*, *2ndFlrSF* to *SndFlrSF* and *3SsnPorch* to *ThrSsnPorch*), because a name that starts with a number cannot be used directly in formulas.
+Variables whose name starts with a number were renamed (*1stFlrSF* to *FstFlrSF*, *2ndFlrSF* to *SndFlrSF* and *3SsnPorch* to *ThrSsnPorch*), because a name that starts with a number cannot be used directly in formulas.
 
 #### 2.3.4 Variables creations
 
 > **In this section** we add the three porch areas into a single *EnclosedPorch* variable and drop the other two, and we build an auxiliary flag that marks the houses that have a garage (it is only used for the checks of the next section, it is not a variable of the model).
 
-Enclosed porch, Three season porch and Screen porch area in square feet was sumarized because are more or less the same. In fact are Enclosed porch.
+The enclosed porch, three-season porch and screen porch areas (in square feet) were added up into one variable, because they are basically the same thing: an enclosed porch.
 
 #### 2.3.5 Drop variables
 
 > **In this section** we check the reasons to drop six variables and then drop them: how many houses have miscellaneous worth more than 1,000 USD, how many have low quality finished area, how strongly the year the garage was built follows the year the house was built, and whether the basement areas add up exactly to the total basement area. The sum matches in the 1,459 houses, so *TotalBsmtSF* carries no extra information.
 
-- **PoolArea**: was dropped because in this database hardly anybody has a pool in their house.
-- **TotalBsmtSF**: was dropped because is the sum of other variables.
-- **GarageYrBlt**: was very correlated with *YearBuilt* variable, and has some missing values.
-- **MSSubClass**: its a mix between *HouseStyle* and *YearBuilt*, for this reason the variable was deleted.
-- **MiscVal**: First of all, only few houses has miscelaneous for more than 1,000 USD, considering that the average house price is 175,000 USD, that is insignificant. Also, "is part of the house price equation" and it is like "know a part of the answer". Finally the variable has a lot of houses without miscelaneous.
-- **LowQualFinSF**: have only 14 houses have data above zero.
+- **PoolArea**: almost no house in the data has a pool.
+- **TotalBsmtSF**: it is just the sum of the other basement areas.
+- **GarageYrBlt**: it almost always matches *YearBuilt* (the garage is built with the house), and it has missing values.
+- **MSSubClass**: it is a mix of *HouseStyle* and *YearBuilt*, so it repeats information.
+- **MiscVal**: only a few houses have extras (miscellaneous features) worth more than 1,000 USD, which is tiny next to an average price of about 175,000 USD. Also, this value is part of the price itself, so using it would be like knowing part of the answer in advance. And most houses have no extras at all.
+- **LowQualFinSF**: only 14 houses have a value above zero.
 
 **Output (houses with miscellaneous value above 1,000 USD, and houses with low quality finished area):**
 
@@ -433,7 +433,7 @@ GarageYrBlt   0.862234     1.000000
 
 > **In this section** we deal with unusual values and with outliers (values much bigger than the rest, which pull the model towards them). The very rare values are brought back to a normal level: the two houses with 2 half bathrooms in the basement are set to 1, the house with 3 full bathrooms in the basement is set to 2, and the two houses with no kitchen are set to 1. Then outliers are detected with the interquartile rule (a value is an outlier when it falls more than 1.5 interquartile ranges below the first quartile or above the third one), the distribution of the affected variables is plotted, and a cut-off point is read from each plot: everything above it is truncated to the cut-off. Finally we check whether a house says it has something (a basement, a fireplace) while its size is zero or the other way around: only one house was inconsistent (a basement with living quarters of zero square feet) and its basement type was set to unfinished.
 
-Unusual or non-coherent values, outliers were analysed and replaced.
+Unusual values, values that don't make sense, and outliers were checked and replaced.
 
 **Output (variables with outliers, with the lower and upper limits of the interquartile rule):**
 
@@ -454,7 +454,7 @@ Unusual or non-coherent values, outliers were analysed and replaced.
 | OpenPorchSF   |       79.0 |    -108.00 |     180.00 |     742.0 |
 | EnclosedPorch |      290.0 |     -60.75 |     101.25 |    1012.0 |
 
-According to the outlier analysis, the following variables need to be observed in order to truncate them and get a more robust model:
+The outlier check says these variables need a closer look, to cap their extreme values and get a more robust model (one that a few big values can't pull around):
 
 - LotArea
 - MasVnrArea
@@ -478,7 +478,7 @@ According to the outlier analysis, the following variables need to be observed i
 
 From the previous charts we determine the cut-off points from which the data will be truncated: 30,000 square feet for *LotArea*, 600 for *MasVnrArea*, 3,000 for *FstFlrSF*, 3,000 for *GrLivArea*, 600 for *WoodDeckSF* and 300 for *OpenPorchSF*.
 
-We analyze if there are houses that claim to have certain things (such as a garage), but their size is 0 or vice-versa. The pair of variables are:
+We also check for houses that say they have something (like a basement) but its size is 0, or the other way around. The pairs checked are:
 
 - no basement and BsmtFinSF1
 - no basement and BsmtFinSF2
@@ -493,19 +493,19 @@ We analyze if there are houses that claim to have certain things (such as a gara
 
 ![House price distribution](plots/plot7_house_price_distribution.png)
 
-Fortunatelly the response variable distribution is quite similar to a normal distribution, this is important because if we want to use a multiple lineal regression we must assure that the errors have normal distribution with mean zero and variance one.
+Good news: the sale price (the variable we predict) looks quite close to a normal distribution (the classic bell curve). This helps, because linear regression assumes that its errors follow a normal distribution with mean zero and constant variance.
 
 ![QQ plot of the sale price](plots/plot8_qqplot_sale_price.png)
 
 *The horizontal axis is the value expected under a normal distribution and the vertical axis is the value observed in the data, both standardized.*
 
-However, looking at the qqplot, it can be observed that Sale Price has a slight asymmetry to the right and 7 point above the expected, it's advisable to remove this point if it appear in the train set.
+However, the QQ plot shows that the sale price leans slightly to the right (a few very expensive houses), with 7 points above what a normal distribution would expect. It is better to remove those houses if they end up in the training set.
 
 ### 3.2 Correlation analysis - between the independent variables
 
 > **In this section** we compute the correlation between every pair of explanatory variables and print the pairs above 0.8 (in absolute value). Three pairs appear, and the crosstabs below confirm that in each pair the two variables carry almost the same information. The full correlation matrix is plotted as a heat map afterwards.
 
-Measuring the linear correlation is important, although is not conclusive about the non-relationship between the variables since it only measures linear relationship (i.e. non-quadratic relationship is not measured).
+Correlation is useful, but it only measures straight-line (linear) relationships. A correlation near zero does not prove that two variables are unrelated: they could be linked in a curved way that correlation misses.
 
 **Output (pairs of variables with a correlation above 0.8):**
 
@@ -539,19 +539,19 @@ GarageCond      GarageQual     0.933789
 | 3                       |  0 |  2 | 19 | 1268 |  4 |  0 |
 | 4                       |  0 |  0 |  0 |    7 |  2 |  1 |
 
-Primary correlation conclusions:
+Main conclusions from the correlations:
 
-- As could be supposed GarageCars (Size of garage in car capacity) and GarageArea (Size of garage in square feet) are highly correlated, GarageCars was deleted.
-- Fireplaces (Number of fireplaces) and FireplaceQu (Fireplace quality) are highly correlated, Fireplaces was deleted because is more important the quality than the quantity (i.e. the Fireplaces could be in poor conditions) also the majority of the houses has one or zero fireplaces.
-- As could be supposed too, GarageQual (Garage quality) and GarageCond (Garage condition) are highly correlated. Due to GarageQual has more deviation, GarageCond was deleted.
+- As expected, *GarageCars* (garage size in cars) and *GarageArea* (garage size in square feet) are highly correlated, so *GarageCars* was deleted.
+- *Fireplaces* (number of fireplaces) and *FireplaceQu* (fireplace quality) are highly correlated. *Fireplaces* was deleted, because quality matters more than quantity (a fireplace can be in poor condition), and most houses have one or zero fireplaces anyway.
+- Also as expected, *GarageQual* (garage quality) and *GarageCond* (garage condition) are highly correlated. *GarageCond* was deleted, because *GarageQual* varies more between houses, so it carries more information.
 
 ![Correlation plot between the independent variables](plots/plot9_correlation_plot_independent_vars.png)
 
-It can be evidenced some variables well correlated with the rest:
+Some variables are clearly correlated with others:
 
-- OverallQual has high positive correlation with year built / YearRemodAdd, KitchenQual, ExterQual, BsmtQual it means that if a person want to improve a house overall quality is advisable to made a remodelation especially in order to improve the kitchen, the basement or the external aspect. Also houses with good overall quality should have good kitchen quality, external quality or basement quality (the same happens with the other factors).
-- Basement condition are well correlated with basement quality.
-- Garage quality are well correlated with garage area.
+- *OverallQual* (overall quality) goes up together with the year the house was built or remodelled (*YearRemodAdd*) and with the quality of the kitchen (*KitchenQual*), the exterior (*ExterQual*) and the basement (*BsmtQual*). So, to raise a house's overall quality, a remodel focused on the kitchen, the basement or the exterior is a good idea. Also, houses with good overall quality tend to have a good kitchen, exterior and basement too (and the other way around).
+- Basement condition goes up together with basement quality.
+- Garage quality goes up together with garage area.
 
 ### 3.3 Correlation with the sale price - numerical variables
 
@@ -559,29 +559,29 @@ It can be evidenced some variables well correlated with the rest:
 
 ![Correlation of the variables with the sale price](plots/plot10_correlation_with_sale_price.png)
 
-The sale price is highly correlated with the Number of bedrooms above basement level and Lot size, this factors are not highly correlated between then. For these reasons, it is expectable that this variables will play a crucial role in the final model. Also if somebody wants to increase a house price needs to increase the number of bedrooms or buy more land.
+The sale price is highly correlated with the number of bedrooms above the basement and with the lot size, and these two are not correlated with each other. So both should play a key role in the final model. In plain words: to raise a house's price, add bedrooms or buy more land.
 
-The sale price is moderately correlated with GrLivArea (Above grade living area square feet) and TotRmsAbvGrd (Total rooms above grade without include bathrooms). However, these two variables are highly correlated and probably one of these will play an important role in the regression, but probably one of them won't make an impact in the model.
+The sale price is moderately correlated with *GrLivArea* (living area above ground, in square feet) and *TotRmsAbvGrd* (rooms above ground, not counting bathrooms). But these two carry almost the same information, so probably only one of them will matter in the model.
 
-Variables with very low correlations need to be analyses in order to determine if they are going to be deleted or not (variables with no correlation at all with the sale price).
+Variables with a very low correlation with the sale price need a closer look, to decide whether to delete them.
 
-A negative correlation between Home functionality and the Sale price no make sense. The same situation happen between OverallCond (Rates the overall condition of the house) and Sale Price. For this reason, Functional and OverallCond variables were deleted.
+A negative correlation between home functionality (*Functional*) and the sale price makes no sense (a more functional house should not be cheaper). The same happens with *OverallCond* (the overall condition of the house). So both variables were deleted.
 
 ![Sale price by month sold](plots/plot11_sale_price_by_month_sold.png)
 
 *The horizontal axis is the month the house was sold (1 = January to 12 = December) and the vertical axis is the average sale price in USD. The axis labels on the chart are swapped.*
 
-It can be seen that in the months of February to April the sale value is on average lower than the sale value between May and August. Then start to increase till December.
+Houses sold from February to April are, on average, cheaper than those sold from May to August. After that, prices rise again until December.
 
 ![Scatter plots of the variables with a very low correlation with the sale price](plots/plot12_scatter_low_correlation_vars.png)
 
 *Each small chart puts the sale price on the horizontal axis and one variable on the vertical axis.*
 
-For some variables, the relationship with the target variable is very low, this variables were deleted:
+These variables have a very weak relationship with the sale price (the target: the value we want to predict), so they were deleted:
 
 - YearBuilt, YearRemodAdd, MasVnrArea, BsmtQual, BsmtExposure, BsmtFinSF1, BsmtFinSF2, BsmtUnfSF, BsmtHalfBath, WoodDeckSF, OpenPorchSF, YrSold.
 
-On the other hand, the variables the correlation seems to make some sense, specially can decrease in those cases when 0 is imputated when something is not present (i.e. basement). The variables are:
+For these other variables the relationship does make some sense, so they were kept. Their correlation may look low partly because missing things were filled with 0 (for example, a house with no basement gets 0):
 
 - LotFrontage, LotShape, LandSlope, OverallQual, ExterQual, ExterCond, BsmtCond, HeatingQC, BsmtFullBath, KitchenAbvGr, KitchenQual, FireplaceQu, GarageQual.
 
@@ -627,9 +627,9 @@ On the other hand, the variables the correlation seems to make some sense, speci
 | RM       | 170408.0 |     242 |
 | FV       | 167461.0 |      74 |
 
-Floating Village Residential and Residential Medium Density has lower prices than Residential Low Density houses.
+Floating Village Residential and Residential Medium Density houses have lower prices than Residential Low Density houses.
 
-Houses with a pave alley cost in average 13,000 USD less than the No Alley or Gravel Houses. (The table of average price by alley type was assigned to a variable in the notebook, so it is not shown among the results.)
+Houses with a paved alley cost on average 13,000 USD less than houses with no alley or a gravel alley. (The table of average price by alley type was saved in a variable but never printed, so it is not shown here.)
 
 **Output (average sale price in USD by land contour):**
 
@@ -640,7 +640,7 @@ Houses with a pave alley cost in average 13,000 USD less than the No Alley or Gr
 | Lvl         | 179043.0 |    1311 |
 | HLS         | 177008.0 |      70 |
 
-Properties in a depression land contour has more value than other types of land contour, however there are only 24 houses, thus this value is not so confident.
+Houses on low ground (a depression) are worth more than those on other land contours, but there are only 24 of them, so this result is not very reliable.
 
 **Output (average sale price in USD by lot configuration):**
 
@@ -651,9 +651,9 @@ Properties in a depression land contour has more value than other types of land 
 | FR23      | 180150.0 |      48 |
 | Inside    | 178239.0 |    1081 |
 
-Properties with a Cul-de-sac lot config has an increase in their value of approximate 8,000 USD.
+Houses on a cul-de-sac (a dead-end street) are worth about 8,000 USD more.
 
-Neighbourhood was divided in socioeconomical level acoording to houses prices determining 4 segments:
+Neighbourhoods were grouped into 4 socioeconomic levels, based on their house prices:
 
 - Rich
 - Medium-rich
@@ -674,7 +674,7 @@ Neighbourhood was divided in socioeconomical level acoording to houses prices de
 | Artery     | 180984.0 |      44 |
 | Norm       | 178597.0 |    1251 |
 
-Properties near something positive have more value than the others, also, houses closes to the Railroad have more value than normal houses.
+Houses near something positive (like a park) are worth more. Surprisingly, houses close to the railroad are also worth more than normal ones.
 
 **Output (average sale price in USD by type of dwelling):**
 
@@ -686,7 +686,7 @@ Properties near something positive have more value than the others, also, houses
 | Twnhs    | 158204.0 |      53 |
 | TwnhsE   | 158097.0 |     113 |
 
-Duplex were better sold than other houses. On the other hand Townhouse were worse sold than other type of houses.
+Duplexes sold for more than other houses, and townhouses for less.
 
 **Output (average sale price in USD by house style):**
 
@@ -698,7 +698,7 @@ Duplex were better sold than other houses. On the other hand Townhouse were wors
 | 1Story     | 176418.0 |     750 |
 | SFoyer     | 169055.0 |      46 |
 
-Properties with two stories or more have more value than others. On the other side Split Foyer houses have less value than others.
+Houses with two or more stories are worth more, and split foyer houses are worth less.
 
 **Output (average sale price in USD by roof style):**
 
@@ -708,7 +708,7 @@ Properties with two stories or more have more value than others. On the other si
 | Other     | 181411.0 |      25 |
 | Gable     | 178299.0 |    1169 |
 
-Hip Roofstyle have more value than Gable.
+Houses with a hip roof are worth more than those with a gable roof.
 
 **Output (average sale price in USD by exterior covering):**
 
@@ -723,7 +723,7 @@ Hip Roofstyle have more value than Gable.
 | MetalSd     | 174584.0 |     230 |
 | CemntBd     | 172096.0 |      65 |
 
-Exterior covering on house with Brick and Plywood have more value than the others. In the other hand, Exterior covering on house with Cement Board or Metal Siding have less value than others.
+Houses covered with brick or plywood are worth more, and those covered with cement board or metal siding are worth less.
 
 **Output (average sale price in USD by masonry veneer type):**
 
@@ -733,7 +733,7 @@ Exterior covering on house with Brick and Plywood have more value than the other
 | Stone      | 178447.0 |     121 |
 | None       | 177866.0 |     894 |
 
-Properties with brick masonry veneer type have more value than other houses.
+Houses with a brick masonry veneer (a decorative brick layer on the walls) are worth more.
 
 **Output (average sale price in USD by central air conditioning):**
 
@@ -742,7 +742,7 @@ Properties with brick masonry veneer type have more value than other houses.
 | Y          | 179506.0 |    1358 |
 | N          | 174849.0 |     101 |
 
-Houses with Central air conditioning have more value than those which don't have it.
+Houses with central air conditioning are worth more than those without it.
 
 **Output (average sale price in USD by electrical system):**
 
@@ -751,7 +751,7 @@ Houses with Central air conditioning have more value than those which don't have
 | SBrkr      | 179448.0 |    1337 |
 | Fuse       | 176286.0 |     122 |
 
-Houses with fuse electrical system have less value than the houses with Standard Circuit Breakers & Romex electrical system.
+Houses with an old fuse-based electrical system are worth less than those with standard circuit breakers (Romex).
 
 **Output (average sale price in USD by garage type):**
 
@@ -763,7 +763,7 @@ Houses with fuse electrical system have less value than the houses with Standard
 | No         | 177893.0 |      76 |
 | Detchd     | 175478.0 |     392 |
 
-Houses with Built-In garage (Garage part of house - typically has room above garage) have more value than others. On the other hand, houses with garage detached from home have less value.
+Houses with a built-in garage (part of the house, usually with a room above it) are worth more, and houses with a detached garage are worth less.
 
 **Output (average sale price in USD by paved driveway):**
 
@@ -773,7 +773,7 @@ Houses with Built-In garage (Garage part of house - typically has room above gar
 | P          | 179251.0 |      32 |
 | N          | 176147.0 |     126 |
 
-Properties without paved driveway have less value.
+Houses without a paved driveway are worth less.
 
 **Output (average sale price in USD by miscellaneous feature):**
 
@@ -782,7 +782,7 @@ Properties without paved driveway have less value.
 | Shed        | 185340.0 |      46 |
 | No          | 178984.0 |    1413 |
 
-Houses with Shed have more value than the others.
+Houses with a shed are worth more.
 
 **Output (average sale price in USD by type of sale):**
 
@@ -793,7 +793,7 @@ Houses with Shed have more value than the others.
 | COD      | 177989.0 |      44 |
 | Contract | 173727.0 |      27 |
 
-New houses were sold at a higher value. On the other hand, houses sold by contract were sold at a lower value.
+New houses sold for more, and houses sold by contract sold for less.
 
 ## 4. Regression analysis
 
@@ -801,14 +801,14 @@ New houses were sold at a higher value. On the other hand, houses sold by contra
 
 > **In this section** we prepare the data for the model: every remaining text variable becomes a set of 0/1 columns (one per category, dropping the first one so there is no redundancy), the data is split into training and test sets (80% / 20%), the seven most expensive houses of the training set are removed, and all the columns are standardized (each value minus the average, divided by the standard deviation) so that variables measured in different units weigh the same.
 
-The data was divided into two mutually exclusive subsets:
+The data was split into two separate groups (no house is in both):
 
-- Train: This subset is use to train the model.
-- Test: This subset is use to verify that the model reproduce the desired results.
+- **Train**: the houses the model learns from.
+- **Test**: houses kept aside to check how well the model works on houses it has never seen.
 
 ![QQ plot of the training set before removing the atypical houses](plots/plot14_qqplot_train_before.png)
 
-Atypical data points (houses with Sale Price above 245,000 USD) were deleted from the train set.
+Atypical houses (sale price above 245,000 USD) were removed from the training set.
 
 **Output (ten most expensive houses of the training set):**
 
@@ -827,13 +827,13 @@ Atypical data points (houses with Sale Price above 245,000 USD) were deleted fro
 
 ![QQ plot of the training set after removing the atypical houses](plots/plot15_qqplot_train_after.png)
 
-Sales prices distribution improves a lot and now is much more similar than a **normal distribution** than before.
+The sale price now looks much closer to a **normal distribution** than before.
 
 ### 4.2 Baseline
 
 > **In this section** we build the baseline, the simplest possible prediction: giving every house of the test set the average price of the training set. Any model has to beat this. The errors are the Mean Absolute Error (the average size of the mistake, in USD), the Mean Squared Error (the average of the squared mistakes, which punishes the big ones) and its square root.
 
-A fundamental aspect of a model assessment is to compare with a baseline. In this case we will take as a baseline the error derived from estimating all the scores as the average score of the training data.
+To know if a model is good, we compare it with a baseline: a very simple prediction that any useful model must beat. Here the baseline gives every house the average price of the training set.
 
 **Output (baseline):**
 
@@ -846,11 +846,11 @@ Root Mean Squared Error: 16738.26
 
 ### 4.3 Linear regression techniques
 
-1. **Simple Linear Regression**: The objective function (also called as the cost) to be minimized is just the RSS (Residual Sum of Squares), i.e. the sum of squared errors of the predicted outcome as compared to the actual outcome.
-2. **Ridge Regression**: The objective function to be minimized is the RSS plus the sum of square of the magnitude of weights.
-3. **Lasso Regression**: The objective function to be minimized is the RSS plus the sum of absolute value of the magnitude of weights.
+1. **Simple Linear Regression**: finds the formula that makes the RSS (Residual Sum of Squares: the sum of the squared mistakes) as small as possible.
+2. **Ridge Regression**: the same, plus a penalty for big weights (the sum of the squared coefficients). This keeps the coefficients small.
+3. **Lasso Regression**: the same idea, but the penalty is the sum of the absolute values of the coefficients. This can push some coefficients to exactly zero, which removes those variables.
 
-Ridge and lasso penalized the indiscriminated used of variables and this is very important to avoid overfitting (good training result, poor testing result), for this reason lasso and ridge regression are going to be used.
+Ridge and lasso punish a model that leans on too many variables. That helps avoid overfitting (great results on the training data, poor results on new data), so these two are the ones used here.
 
 #### 4.3.1 Ridge regression
 
@@ -904,14 +904,14 @@ Root Mean Squared Error: 1363.07
 {'alpha': 60.804020100502505, 'fit_intercept': True}
 ```
 
-As it could be seeing, Lasso Regression returns betters results in the test set and the difference between result in training and test set are less (less difference between results in training and test set derive in less overfitting). For these reasons, Lasso regression was selected as the model for this data.
+Lasso has the smallest error on the test set (houses the model never saw), and the smallest gap between its training and test errors. A small gap means less overfitting: the model learned general patterns instead of memorizing the training houses. So lasso was chosen for this data.
 
 | Result in test set | Ridge | Lasso |
 |--|--|--|
 | Mean Absolute Error | 1210 | **1157** |
 | Root Mean Squared Error | 2018 | **1967** |
 
-Another aspect of Lasso Regression is that for variables with small or non significant beta coefficients, the algorithm is able to predict the outcome fairly well even without the variable, lasso is prone to removed the variable from the equation by setting a zero coefficient.
+Another plus of lasso: when a variable barely helps, lasso sets its coefficient (its weight in the formula) to zero, which removes it from the model and keeps the model simple.
 
 **Output (ratio between test and training results):**
 
@@ -920,7 +920,7 @@ Mean Absolute Error: 1.17
 Root Mean Squared Error: 1.44
 ```
 
-Considering the MAE coefficient (Mean Absolute Error), the results gets worse in 17%. On the other side, if Root Mean Square Error is consider, the results get worse in 44%, however is prone to being influenced by outliers.
+On the test set, the Mean Absolute Error (MAE) is 17% worse than on the training set. The Root Mean Squared Error (RMSE) is 44% worse, but the RMSE is more sensitive to a few big mistakes (outliers).
 
 **Output (variables kept by the lasso, with their coefficients):**
 
@@ -947,7 +947,7 @@ Considering the MAE coefficient (Mean Absolute Error), the results gets worse in
 | SaleType_Contract    |     -60.013675 |
 | SaleType_New         |     130.817815 |
 
-Some variables were deleted because the efect in the model is not the expected:
+Some variables were deleted because their effect in the model was not the expected one (it made no sense):
 
 - BsmtCond
 - ExterQual
@@ -972,9 +972,9 @@ Some variables were deleted because the efect in the model is not the expected:
 
 ![Correlation plot of the variables of the final model](plots/plot16_correlation_plot_final_model_vars.png)
 
-Although there is a high correlation between BedroomAbvGr and TotRmsAbvGrd and a moderate correlation between Exterior2nd_VinylSd and Foundation_CBlock, for the rest of the variables the correlation is low. Thus TotRmsAbvGrd was deleted and it can be concluded there is little or no **Multicollinearity**.
+*BedroomAbvGr* and *TotRmsAbvGrd* are highly correlated, and *Exterior2nd_VinylSd* and *Foundation_CBlock* moderately so; the rest have low correlations. So *TotRmsAbvGrd* was deleted, and there is little or no **multicollinearity** left (variables repeating each other's information).
 
-The VIF factors assure that the model has little or no **Multicollinearity** (VIF above 10 indicates multicolinearity issues).
+The VIF values confirm it: they are all below 10 (above 10 would signal a problem).
 
 **Output (VIF of the 13 variables of the model):**
 
@@ -1005,9 +1005,9 @@ Root Mean Squared Error: 1975.24
 
 > **In this section** we also check the two assumptions of the linear regression: that the residuals (the difference between the predicted price and the real price) have mean zero, and that they do not grow with the price of the house (heteroscedasticity).
 
-The residual's mean is zero.
+The residuals (real price minus predicted price) have a mean of zero.
 
-There is no heterocedasticity in the model (relation between the residual and the house price - houses more expensives derive on bigger residuals).
+There is no heteroscedasticity: the size of the mistakes does not grow with the price of the house.
 
 ![Relation between house price and residuals](plots/plot17_price_vs_residuals.png)
 
@@ -1031,9 +1031,9 @@ There is no heterocedasticity in the model (relation between the residual and th
 | SaleType_Contract    |     -98.123995 |
 | SaleType_New         |     182.917556 |
 
-Now the coefficients give expected results in terms of direction and the model meets the assumptions required by the multivariate linear regression technique, we can draw conclussions from them.
+Now every coefficient goes in a direction that makes sense, and the model meets the assumptions of linear regression, so we can draw conclusions from it.
 
-First of all, the model improves the estimation of the baseline. Obtaining a Mean Absolute Error of 1,162 USD, that's mean that the model estimate the house value with an expected error of 1,162 USD (baseline: 12,817 USD). Considering that the house price is in average 178,777 USD, the estimation is considered as very good.
+First, the model beats the baseline (giving every house the average price) by far. Its Mean Absolute Error (MAE) is 1,162 USD: on average it misses a house's price by 1,162 USD, against 12,817 USD for the baseline. With an average price of 178,777 USD, that is a very good estimate.
 
 Second, the factors that influence the sale price of a house are:
 
@@ -1050,7 +1050,7 @@ Second, the factors that influence the sale price of a house are:
 - **GarageType**: Garage location
 - **SaleType**: Type of sale
 
-Given that the values were standardized by dividing by the standard deviation, to interpret the results based on their real unit we must divide each coefficient on the corresponding standard deviation.
+The data was standardized (each column divided by its standard deviation), so the coefficients are measured in "standard deviations". To read them in real units (USD per square foot, per bedroom...), each coefficient is divided by its variable's standard deviation.
 
 **Output (coefficients brought back to their real unit):**
 
@@ -1070,22 +1070,22 @@ Given that the values were standardized by dividing by the standard deviation, t
 | SaleType_Contract    |     -98.123995 |             0.134818 |         -727.827126 |
 | SaleType_New         |     182.917556 |             0.271683 |          673.275188 |
 
-In general, a regression coefficient $\beta_{k}$ is interpreted as the marginal effect produced on the dependent variable when the k-th regressor is increased by one unit, while holding the other predictors in the model constant. Thus the regression coefficient interpretation are the following (always remain constant the rest of variables):
+How to read each coefficient ($\beta_{k}$): it is how much the price changes when that variable goes up by one unit, **while all the other variables stay the same**:
 
-- **LotFrontage**: For every linear foot of street connected to property that is increased, the price of the house increases by 2.29 USD.
-- **LotArea**: For every square foot that is increased, the price of the house increases by 1.87 USD.
-- **BsmtFullBath**: For each basement full bathrooms that is built the price of the property decrease by 149.08 USD (This decrease could be related with the inverse relationship between the amount of bathroom in the basement and the amount of bathrooms in the rest of the house).
-- **BedroomAbvGr**: For every new bedroom above basement level in the house, the price of the house increases by 12,906.88 USD.
-- **Neighborhood**: If the house is located in Mitchel, the price of the house increase by 241.27 USD (compare with the rest of Neighborhoods).
-- **BldgType**: If the type of dwelling of the house is Townhouse, the price of the house increase by 350.55 USD (compare with the rest of type of dwelling).
-- **Exterior2nd**: If the second exterior covering on house material (if more than one material) is Vinyl Siding, then the price of the house decrease in 116.38 USD (compare with the rest of second exterior covering).
-- **MasVnrType**: If the masonry veneer type of the house is stone, the price of the house decrease by 199.17 USD (compare with the rest of masonry veneer type).
-- **Foundation**: If the type of foundation is Cinder Block, the price of the house increase by 35.08 USD (compare with the rest of type of foundation).
-- **GarageType**: If Garage is in the Basement, in the Car Port or More than one type of garage, the price of the house increase by 732.28 USD.
-- **SaleType**: If the type of sale is Contract, the price of the house decrease by 727.83 USD (compare with type of sale of warranty, court and other). Also if the house is just constructed and sold, the price of the house increase by 673.28 USD (compare with type of sale of warranty, court and other).
-- **MoSold**: Considering the months of January (1) to December (12), for each month that is expected to make the sale, the price of the house increases on average by 1,137.00 USD. Since the prices of products are set by bid and demand, months with more demand lead to an increase in prices.
+- **LotFrontage**: each extra foot of street touching the property adds 2.29 USD to the price.
+- **LotArea**: each extra square foot of land adds 1.87 USD.
+- **BsmtFullBath**: each full bathroom in the basement lowers the price by 149.08 USD. A possible reason: a house with more bathrooms in the basement has fewer in the rest of the house, and a basement bathroom is less comfortable.
+- **BedroomAbvGr**: each extra bedroom above the basement adds 12,906.88 USD.
+- **Neighborhood**: a house in Mitchel is worth 241.27 USD more than in the other neighbourhoods.
+- **BldgType**: a townhouse is worth 350.55 USD more than other types of dwelling.
+- **Exterior2nd**: if the second exterior covering (when there is more than one material) is vinyl siding, the price drops by 116.38 USD compared with other coverings.
+- **MasVnrType**: a stone masonry veneer (a decorative stone layer on the walls) lowers the price by 199.17 USD compared with other types.
+- **Foundation**: a cinder block foundation adds 35.08 USD compared with other foundations.
+- **GarageType**: a garage in the basement, a car port, or more than one type of garage adds 732.28 USD.
+- **SaleType**: a sale by contract lowers the price by 727.83 USD, and a brand-new house adds 673.28 USD (both compared with warranty, court and other sales).
+- **MoSold**: for each month later in the year (January = 1 to December = 12), the price goes up by 1,137 USD on average. Prices follow supply and demand, so months with more buyers bring higher prices.
 
-The model meets the assumptions required by the multivariate linear regression technique.
+The model meets the main assumptions of linear regression.
 
 ### 4.4 Other regression techniques
 
@@ -1119,11 +1119,11 @@ Mean Squared Error: 6512115.98
 Root Mean Squared Error: 2551.88
 ```
 
-Despite the fact that Lasso Regression methods returns better results than the baseline, others regression techniques was tested and returned worse results than lasso regression.
+Other models (Random Forest and XGBoost) were also tested, but they did worse than lasso.
 
 ## Appendix: Python code
 
-The code below is the same one that is in the `gamblingCompany_assessment.py` file, grouped by the sections of this report. The two lines that only work in Google Colab are commented out.
+The code below is the same as in [`analysis.py`](analysis.py), grouped by the sections of this report. The only difference: here the file paths still point to the original Google Drive folder, while `analysis.py` reads from `data/`. The two lines that only work in Google Colab are commented out.
 
 ### A.1 Introduction
 

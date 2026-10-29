@@ -1,4 +1,4 @@
-# Assignment Senior Data Analyst
+# Rental Market Analysis in Italy
 
 > **TL;DR**
 >
@@ -7,7 +7,9 @@
 > - **What I did:** cleaned the listings, drew prices over time, and mapped how many listings each city has per 100,000 people.
 > - **Result:** proposed 3 KPIs: registration rate, conversion rate and churn (clients who leave). The average apartment rent went from about 1,000 to 1,700 euros a month, and private rooms from 350 to 600.
 
-The dataframe has the following information:
+## Data
+
+The listings table has these columns:
 
 - **city**: The city where the listing is located
 - **category**: Private Room, Shared Room, Apartment, Studio
@@ -23,11 +25,11 @@ The dataframe has the following information:
 - **garden**: Is there a garden available in the property
 - **terrace**: Is there a terrace available in the property
 
-## Business question
+## Business questions
 
-1. What are the 3 most important KPIs/metrics for RealStateCompany and why?
+1. What are the 3 most important KPIs/metrics for RealEstateCompany and why?
 2. Suggest an approach to improve the KPIs/metrics.
-3. What are competitors doing better that RealStateCompany is not?
+3. What are competitors doing better that RealEstateCompany is not?
 
 ## Programming Analysis and Data Visualization
 
@@ -39,25 +41,25 @@ The dataframe has the following information:
 - Geographical distribution & defining cities of interest
 - Any other interesting insights
 
-# Introduction and general information
+## My answers to the business questions
 
-RealStateCompany is a house-renting platform across Europe (in this example we are focusing on Italy), so basically we have 2 types of customers:
+RealEstateCompany is a home rental platform across Europe (this analysis looks only at Italy). It has 2 types of customers:
 
 - **Tenants**: composed of students, expats and young professionals.
 - **Landlords and property managers**: here the company works with universities, companies and recruitment and relocation agencies.
 
-The company makes money with:
+The company makes money from:
 
-- **Commission fee**: when the property is rented, each party has to pay 25% of the first month of rent (not over the contract value, minimum fee 150 euros). For this reason, the price is very important. More expensive properties bring the company more benefits (properties below 600 euros have the same commission fee).
-- I guess that the company receives a kind of commission from electronic payment card companies (such as Mastercard) when people pay the deposit, the monthly rent and extras. So it is not only the sales service (at the moment of renting a property): there is a post-sale service too.
+- **Commission fee**: when a home is rented, each side (tenant and landlord) pays 25% of the first month's rent (not of the whole contract), with a minimum of 150 euros. So the price matters a lot: more expensive homes bring more money (below 600 euros, every home pays the same minimum fee).
+- **Card payment fees** (my guess): the company probably gets a small commission from card companies (like Mastercard) when people pay the deposit, the rent and extras through the platform. So it also earns money after the rental, not only at the moment of renting.
 
-The company, as a platform, has:
+As a platform, the company deals with three kinds of people, one for each stage of the funnel (the path from first visit to paying client):
 
-- **Visitors**: these are associated with the top part of the funnel (**lead generation - Awareness**). A person can visit the site but not rent anything.
-- **Users**: people who already registered on the site as a tenant or landlord, but have not spent money on the site yet. Users are associated with the middle part of the funnel (**lead nurture - Consideration**). For instance, a landlord can publish a place on the site, but that does not mean the place is going to be rented (at least on the site); if the place is not rented, or is rented on another site, then the landlord is not going to spend money with the company.
-- **Clients**: when the contract is made, the users pay the commission fee and become clients; this is associated with the bottom part of the funnel (**sales - Conversions**). If we know how long the contract lasts, we can know whether the client keeps operating with the company or not.
+- **Visitors**: people who visit the site but have not signed up. They are the top of the funnel (**lead generation - Awareness**).
+- **Users**: people who signed up as a tenant or landlord but have not paid anything yet. They are the middle of the funnel (**lead nurture - Consideration**). For example, a landlord can publish a place, but if it is never rented (or is rented on another site), the landlord never pays the company.
+- **Clients**: when a contract is signed, users pay the commission and become clients. This is the bottom of the funnel (**sales - Conversions**). If we know how long the contract lasts, we can tell whether the client keeps working with the company.
 
-When we define a KPI we need to use the acronym SMARTER, which means that KPIs should be:
+A good KPI (Key Performance Indicator: a number that tells if the business is going well) follows the SMARTER rule:
 
 - **Specific**: What exactly do you want to achieve?
 - **Measurable**: How will you identify that you have achieved your goal?
@@ -67,30 +69,30 @@ When we define a KPI we need to use the acronym SMARTER, which means that KPIs s
 - **Explainable**: Easy to understand for your peers.
 - **Relative**: Measured in percentages, or other methods which avoid "vanity metrics".
 
-All these measures can be split, using information from Google Analytics or from our platform if the person is registered, by:
+Each KPI can be split (using Google Analytics, or our own platform data for registered people) by:
 
 - Category of customer (tenant or landlord).
 - City.
-- Demographic variables such as age, gender, socioeconomic level, civil status.
+- Demographic variables such as age, gender, socioeconomic level, marital status.
 - Some other indicator variables such as student or not, expat or local, professional or not.
 - Time variables such as hour, day of the week, month, etc.
-- Campaign: from here there is information about channel, publisher, etc.
+- Campaign (channel, publisher, etc.).
 
-An important fact to consider is that not all the campaigns focus on the same objective; for this reason, some campaigns can have a good registration rate but a poor conversion rate.
+Keep in mind that campaigns have different goals: a campaign can have a good registration rate but a poor conversion rate, and still be doing its job.
 
-In my opinion the most important KPIs are:
+**1. The 3 most important KPIs**, in my opinion:
 
-- **Registration rate**: measured as the percentage of visitors who are not users who became users. This is important because it is a way of finding out whether our awareness campaigns are working or not and, splitting it by the measures above, we can assess which marketing campaigns we need to invest more in, and where we need to invest less or stop investing.
+- **Registration rate**: the share of visitors who sign up and become users. It tells us if our awareness campaigns work and, split by the dimensions above, where to invest more, less, or nothing.
 
-- **Conversion rate**: measured as the percentage of users who are looking for a house (we can find out by watching the users who visit the site) and became clients. This is important because it is a way of finding out whether our conversion campaigns are working or not and, splitting it by the measures above, we can assess which marketing campaigns we need to invest more in, and where we need to invest less or stop investing.
+- **Conversion rate**: the share of users looking for a home (we can see it from their visits) who become clients. It tells us if our conversion campaigns work and where to invest.
 
-- **Churn**: measured as the percentage of clients that are not working with us anymore; this is a measure of retention. This is important because it is a way of finding out whether our retention campaigns are working or not and, splitting it by the measures above, we can assess which retention/CRM campaigns we need to invest more in, and where we need to invest less or stop investing.
+- **Churn**: the share of clients who stop working with us. It measures retention (keeping clients), so it tells us if our retention (CRM) campaigns work and where to invest.
 
-In all these cases an optimization algorithm based on the information available, and applying restrictions such as the amount of money that the company has for the different campaigns or the maximum number of touchpoints that we want to have with a person, is the best approach.
+**2. How to improve them:** use an optimization model that decides how to split the marketing budget between campaigns, based on the data we have and on limits like the total budget or the maximum number of times we want to contact a person.
 
-About the things that the competitors are doing better: in my opinion, RealStateCompany should offer on the platform the possibility of selling and buying a property, because if a landlord wants to sell a property or a tenant wants to buy one, they need to go to one of the site's competitors. Also, the cost of adding this functionality is pretty low (most of it is already built into the platform).
+**3. What competitors do better:** they let people buy and sell homes, not only rent them. Today, a landlord who wants to sell or a tenant who wants to buy has to go to a competitor. Adding this should be cheap, because most of what is needed is already built into the platform.
 
-Finally, looking at the opinions about the company (https://es.trustpilot.com/review/realstatecompany.com?languages=all), most of them complain because the house doesn't look like in the photos. Maybe RealStateCompany could offer, for an additional price, the possibility of providing a person to go with the tenant on the day the property is delivered, or some days before, to check that everything is as in the photos.
+Finally, most of the company's reviews on Trustpilot complain that the home doesn't look like the photos. The company could offer, for an extra fee, someone who visits the home with the tenant on move-in day (or a few days before) to check that everything matches the photos.
 
 ## 0. Import libraries and data
 
@@ -116,23 +118,23 @@ Finally, looking at the opinions about the company (https://es.trustpilot.com/re
 | 3 | Turin | 45.0667 | 7.7000 | Italy | IT | Piedmont | admin | 870952 | 870952 |
 | 4 | Palermo | 38.1157 | 13.3613 | Italy | IT | Sicilia | admin | 668405 | 668405 |
 
-## 1. Cleaning the database
+## 1. Cleaning the data
 
 > **In this section** we applied the steps listed below to the listings table: 5 exact duplicate rows were removed (10,000 → 9,995), then the 595 rows without city (leaving 9,400) and, after splitting `created_at` into date parts, 118 repeated uploads (9,400 → 9,282). The tables show the data types, a summary of the text columns (computed before the rows without city were dropped), the first rows after cleaning and a summary of the numeric columns. The price outliers are handled in the "Outliers" and "Distribution chart - price" subsections.
 
-When the data was read, `created_at` was set as a date and empty cells (`""`) were set as NA values.
+When the data was read, `created_at` was set as a date and empty cells (`""`) were set as missing values (NA).
 
-In this step we did the following:
+The cleaning steps:
 
-- Delete duplicates: if there is a building with the same features uploaded in the same minute, we can infer that it is the same one, uploaded 2 times because a problem with the browser or the web sent the information 2 or more times.
-- Replace `"` (e.g. `"yes"` → `yes`).
-- Set `total_size` as a numerical field.
-- The hour, minutes and seconds were removed from `created_at` because the exact moment when the ad was created is not important, only the specific day (the hour and minute are kept in their own columns).
-- Properties without city will be deleted (595 records) because it is not possible to rent a property if the tenant doesn't know where it is.
-- Country code has only one value, so it was deleted.
-- There is one property with a price over 80,000 (outlier); it was deleted because it looks like the price of the house, not the price of the rent.
-- There are 49 properties with prices of 10 euros or less per month. These examples should be studied, because it can be a price per day or it can be made with the idea of avoiding paying commissions. In this case, these records are going to be deleted.
-- Total size in properties with a total size below 5 square meters will be set to NA.
+- **Delete duplicates**: two listings with the same features uploaded in the same minute are the same listing, sent twice by mistake (for example, a browser or website glitch).
+- Remove extra quotes (e.g. `"yes"` → `yes`).
+- Turn `total_size` into a number.
+- Keep only the day in `created_at`: the exact time doesn't matter (the hour and minute are kept in their own columns).
+- Delete the 595 listings without a city: nobody can rent a place without knowing where it is.
+- Delete `country_code`: it has only one value.
+- Delete the one listing priced over 80,000 euros (an outlier): it looks like the sale price of the home, not a monthly rent.
+- Delete the 49 listings priced at 10 euros or less per month. They deserve a closer look (it could be a price per day, or a trick to avoid paying commissions), but here they are removed.
+- Sizes below 5 square meters are clearly wrong, so they are set to missing (NA).
 
 **Output (data types):**
 
@@ -153,7 +155,7 @@ terrace                          object
 dtype: object
 ```
 
-Most of the categorical fields have only 2 or 3 categories (yes/no/shared). Also there is a lot of missing data; for instance, we only know for 1,388 properties whether the property has a balcony or not. It is suggested to encourage landlords to fill in the data properly; we can suggest an answer based on the uploaded photos. For instance, if the landlord posts a photo of the balcony, the place probably has a shared or individual one.
+Most text columns have only 2 or 3 values (yes/no/shared), and many are mostly empty: for example, we only know for 1,388 listings whether there is a balcony. The company should encourage landlords to fill in these fields, for example by suggesting answers from the photos they upload (a photo of a balcony means the place probably has one).
 
 **Output (summary of the text columns):**
 
@@ -201,9 +203,9 @@ Approximately 3 out of 4 properties are private or shared rooms.
 
 ![Boxplot of the price by category](plots/plot2_boxplot_price_by_category_all.png)
 
-From the following boxplot we can see that the prices of shared and private rooms are more or less the same: a person can find a private room with the same budget that they have for a shared room. Also, most of them are cheaper than 600 euros, so the company gets a commission of 300 euros for each rent (the minimum).
+The boxplot (a chart that shows where most prices fall, plus the extreme ones as dots) shows that shared and private rooms cost about the same: with the budget for a shared room, you can find a private one. Most rooms cost less than 600 euros, so the company gets the minimum commission: 300 euros per rental (150 from each side).
 
-The 50% most expensive private rooms cost the same as the 25% cheapest studios. 75% of the apartments cost more than 1,000 euros. So it is not easy to get an apartment with the budget of a studio.
+The most expensive half of the private rooms costs about the same as the cheapest quarter of the studios, and 75% of the apartments cost more than 1,000 euros. So it is hard to get an apartment with a studio budget.
 
 ![Boxplot of the price by category, prices below 4,000](plots/plot3_boxplot_price_by_category_under_4000.png)
 
@@ -213,30 +215,30 @@ The 50% most expensive private rooms cost the same as the 25% cheapest studios. 
 
 ![Histogram of the price](plots/plot4_price_histogram.png)
 
-## Price development over time
+## 2. Price development over time
 
 > **In this section** we drew three line charts using a rolling window of 30 days with listings: the number of listings per category, the average price per category (from 2017 onwards) and the average price in the 4 cities with the most listings (Milan, Bologna, Pisa and Florence). In all of them the thick orange line is the total of all the listings.
 
-If we look at the number of properties available over time, we see that it decreased due to a decrease in the number of private rooms (after 2017-09). Also, the number of available apartments increased over time, especially in the last 2 years. At the beginning, the site offered four private rooms for each apartment, but at the end the ratio is one to one.
+The number of listings went down over time, because private rooms dropped (after September 2017). Meanwhile, apartments went up, especially in the last 2 years. At the start the site had four private rooms for each apartment; at the end, one for one.
 
-To see the price development over time, data from 2017 onwards is considered because there is a significant number of apartments and studios after that date.
+For prices, only data from 2017 onwards is used, because before that there were very few apartments and studios.
 
 ![Number of properties over time by category](plots/plot5_properties_over_time_by_category.png)
 
-Between January 2017 and September 2017 the average price stays more or less constant, but after that it started to increase (from 400 to 1,000 euros) due to a decrease in the number of private rooms available and also because of an increase in the price of the apartments.
+From January to September 2017 the average price stayed about the same. After that it climbed from 400 to 1,000 euros, because there were fewer (cheap) private rooms and apartments got more expensive.
 
-Despite the seasonal deviations influenced by supply and demand, the mean price of apartments increased from 1,000 to 1,700 euros, studios from 400 to 1,100 euros, private rooms from 350 to 600 euros and shared rooms from 250 to 450. So, with the same price that a person paid to rent an apartment in 2017, now they can only access a studio; a person who rented a studio in 2017 can now only access a private room; and a person who rented a private room in 2017 can now only access a shared room.
+Apart from seasonal ups and downs (driven by supply and demand), average prices went up a lot: apartments from 1,000 to 1,700 euros, studios from 400 to 1,100, private rooms from 350 to 600 and shared rooms from 250 to 450. In other words: the money that rented an apartment in 2017 now only rents a studio, a 2017 studio budget now gets a private room, and a 2017 private room budget now gets a shared room.
 
 ![Price development over time by category](plots/plot6_price_over_time_by_category.png)
 
-Analysing the 4 cities with the most properties:
+In the 4 cities with the most listings:
 
-- The price in Pisa remains constant over time.
-- In 2019 the price in Bologna increased from 400-450 to 700-750.
+- Prices in Pisa stay the same over time.
+- In 2019, prices in Bologna went up from 400-450 to 700-750 euros.
 
 ![Price development over time in the 4 cities with the most properties](plots/plot7_price_over_time_top4_cities.png)
 
-## Geographical distribution & defining cities of interest
+## 3. Geographical distribution & defining cities of interest
 
 > **In this section** we calculated the average price and the number of properties of each city and joined them with the population of the city to get the penetration, i.e. the number of properties per 100,000 inhabitants (the 3 properties from Reggio Calabria are lost in this join, as noted in the code). The first rows of the resulting table are shown below; `penetration_per_100thousand_plot` is the penetration limited to between 50 and 1,000, used only to keep the dot sizes on the map readable. The map has one dot per city, with the size showing the penetration and the color showing the average price.
 
@@ -254,7 +256,7 @@ Analysing the 4 cities with the most properties:
 
 *Each dot is a city: its size is the penetration (properties per 100,000 inhabitants) and its color is the average monthly price in euros (scale from 300 to 900).*
 
-## Geographical distribution & defining cities of interest - Apartments
+## 4. Geographical distribution & defining cities of interest - Apartments
 
 > **In this section** we repeated the same steps using only the apartments. Here `penetration_per_100thousand_plot` is the penetration multiplied by 10 and then limited to between 50 and 1,000, and the color scale goes from 600 to 2,000 euros. The whole city table is shown below, followed by the map.
 
@@ -290,7 +292,7 @@ Analysing the 4 cities with the most properties:
 
 *Each dot is a city: its size is the penetration of apartments (properties per 100,000 inhabitants, multiplied by 10) and its color is the average monthly price of apartments in euros (scale from 600 to 2,000).*
 
-## Geographical distribution & defining cities of interest - Rooms
+## 5. Geographical distribution & defining cities of interest - Rooms
 
 > **In this section** we repeated the same steps using only the private and shared rooms together. Here `penetration_per_100thousand_plot` is the penetration limited to between 50 and 500, and the color scale goes from 250 to 500 euros. The map is shown first, followed by the whole city table.
 
@@ -334,6 +336,8 @@ Analysing the 4 cities with the most properties:
 
 ## Appendix: Python code
 
+The code below is the same as in [`analysis.py`](analysis.py), grouped by the sections of this report. The only difference: here the file path still points to the original Google Drive folder, while `analysis.py` reads from `data/`.
+
 ### A.1 Import libraries and data (section 0)
 
 ```python
@@ -366,7 +370,7 @@ from geopandas import GeoDataFrame
 # ELI5: the folder where the three data files live. Change it to the folder on your own
 # computer (or Google Drive) before running the code.
 # user parameters
-path = r'gdrive/My Drive/Data Science Project/RealStateCompany/' 
+path = r'gdrive/My Drive/Data Science Project/RealEstateCompany/' 
 
 # ELI5: read the three files into tables.
 # map = the borders of Italy (a "shapefile" is a zipped file with the shapes drawn as polygons).

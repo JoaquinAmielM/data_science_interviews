@@ -5,6 +5,10 @@
 # them again (training takes too long), so they must stay in the repo.
 !/2020-12 Gambling Company - Data Scientist/outputs/*.pkl
 
+# Notebooks are not uploaded: each report (README.md) already shows the
+# results and the code, and analysis.py has the code ready to run.
+*.ipynb
+
 # Python / Jupyter leftovers
 __pycache__/
 .ipynb_checkpoints/

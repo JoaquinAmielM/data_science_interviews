@@ -1,5 +1,5 @@
 """
-RealStateCompany - Senior Data Analyst assignment (code version of the report).
+RealEstateCompany - Senior Data Analyst assignment (code version of the report).
 
 ELI5: this script takes a table of rental listings in Italy and
 1) cleans it (removes repeated rows, rows without city, impossible prices and sizes),
