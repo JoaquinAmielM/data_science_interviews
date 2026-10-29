@@ -11,9 +11,38 @@ In technology, writing code is only half the battle; the other half is communica
 
 ---
 
+## 📚 Projects
+
+| Date | Role | Problem | Techniques | Key result |
+|------|------|---------|------------|------------|
+| 2020-11 | [Marketing Data Analyst](<2020-11 Gambling Company - Marketing Data Analyst/README.md>) | Predict house prices + SQL test | Regression (Ridge, Lasso, Random Forest, XGBoost), data cleaning | Average error of 1,162 USD (baseline: 12,817) |
+| 2020-12 | [Data Scientist](<2020-12 Gambling Company - Data Scientist/README.md>) | Find which betting customers will become VIP | Classification (Logistic, Random Forest, XGBoost), log loss | Random Forest: log loss 0.240 (baseline: 0.277) |
+| 2020-12 | [Data Science Analyst](<2020-12 Startup - Data Science Analyst/README.md>) | Group users to target in a marketing campaign | Clustering (K-means, elbow method) | 5 user segments, each with a recommendation |
+| 2022-08 | [Senior Data Analyst](<2022-08 Real Estate Company - Senior Data Analyst/README.md>) | Rental listings: KPIs and how to improve them | EDA, maps (geopandas) | 3 KPIs proposed; rent trends by city |
+| 2023-05 | [Growth Data Analyst](<2023-05 Startup - Growth Data Analyst/README.md>) | Do users walk more after installing the app? | A/B style tests (t-test, Bayesian) | +414 steps a day (99.996% probability) |
+| 2023-06 | [Data Automation Specialist](<2023-06 Anti Virus Company - Data Automation Specialist/README.md>) | API data, sales forecast, campaign dashboard | Time series (SARIMA), Tableau | Forecast error of ±13 units; 46% of campaigns don't pay off |
+
+> Company names are hidden on purpose (e.g. "Gambling Company"). Each report starts with a short TL;DR (a summary of the key points).
+
+---
+
 ## 📂 Project Structure
 
-Each interview process is organized into its own dedicated folder and includes a markdown file with the findings
+Every folder follows the same layout:
+
+```
+YYYY-MM Company type - Role/
+├── README.md        ← the report: problem, analysis and conclusions
+├── analysis.ipynb   ← the notebook (originally run on Google Colab)
+├── analysis.py      ← the same code as a plain Python script
+├── assignment.docx  ← the original task, when available
+├── data/            ← input data
+├── outputs/         ← results and saved models (most models are not uploaded: the script trains them again)
+└── plots/           ← charts used in the report
+```
+
+**How to run it:** install the libraries once with `pip install -r requirements.txt`, then open a project folder and run `python analysis.py` from inside it (the scripts read `data/` and write to `outputs/`, both relative to that folder).
+The notebooks are the original Google Colab versions, so they still read the files from Google Drive.
  
 ---
 

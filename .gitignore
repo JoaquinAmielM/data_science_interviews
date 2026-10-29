@@ -1,0 +1,18 @@
+# Trained models (.pkl). The code creates them again when you run it,
+# so there is no need to keep big binary files in the repo.
+*.pkl
+# Exception: this script loads 4 already-trained models instead of training
+# them again (training takes too long), so they must stay in the repo.
+!/2020-12 Gambling Company - Data Scientist/outputs/*.pkl
+
+# Python / Jupyter leftovers
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# OS junk
+.DS_Store
+__MACOSX/
+Thumbs.db
+desktop.ini

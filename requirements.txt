@@ -1,0 +1,20 @@
+# Libraries used across all the assignments.
+# Install with: pip install -r requirements.txt
+# The notebooks were run on Google Colab, so versions are not pinned (fixed).
+pandas
+numpy
+matplotlib
+seaborn
+scipy
+statsmodels
+scikit-learn
+scikit-plot
+xgboost
+mlxtend
+kneed
+bayesian-testing
+geopandas
+shapely
+requests
+tqdm
+python-dateutil
