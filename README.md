@@ -13,14 +13,14 @@ In technology, writing code is only half the battle; the other half is communica
 
 ## 📚 Projects
 
-| Date | Role | Problem | Techniques | Key result |
-|------|------|---------|------------|------------|
-| 2020-11 | [Marketing Data Analyst](<2020-11 Gambling Company - Marketing Data Analyst/README.md>) | Predict house prices + SQL test | Regression (Ridge, Lasso, Random Forest, XGBoost), data cleaning | Average error of 1,162 USD (baseline: 12,817) |
-| 2020-12 | [Data Scientist](<2020-12 Gambling Company - Data Scientist/README.md>) | Find which betting customers will become VIP | Classification (Logistic, Random Forest, XGBoost), log loss | Random Forest: log loss 0.240 (baseline: 0.277) |
-| 2020-12 | [Data Science Analyst](<2020-12 Startup - Data Science Analyst/README.md>) | Group users to target in a marketing campaign | Clustering (K-means, elbow method) | 5 user segments, each with a recommendation |
-| 2022-08 | [Senior Data Analyst](<2022-08 Real Estate Company - Senior Data Analyst/README.md>) | Rental listings: KPIs and how to improve them | EDA, maps (geopandas) | 3 KPIs proposed; rent trends by city |
-| 2023-05 | [Growth Data Analyst](<2023-05 Startup - Growth Data Analyst/README.md>) | Do users walk more after installing the app? | A/B style tests (t-test, Bayesian) | +414 steps a day (99.996% probability) |
-| 2023-06 | [Data Automation Specialist](<2023-06 Anti Virus Company - Data Automation Specialist/README.md>) | API data, sales forecast, campaign dashboard | Time series (SARIMA), Tableau | Forecast error of ±13 units; 46% of campaigns don't pay off |
+| Date | Role | Problem | Techniques |
+|------|------|---------|------------|
+| 2020-11 | [Marketing Data Analyst](<2020-11 Gambling Company - Marketing Data Analyst/README.md>) | Predict house prices + SQL test | Regression (Ridge, Lasso, Random Forest, XGBoost), data cleaning |
+| 2020-12 | [Data Scientist](<2020-12 Gambling Company - Data Scientist/README.md>) | Find which betting customers will become VIP | Classification (Logistic, Random Forest, XGBoost), log loss | 
+| 2020-12 | [Data Science Analyst](<2020-12 Startup - Data Science Analyst/README.md>) | Group users to target in a marketing campaign | Clustering (K-means, elbow method) |
+| 2022-08 | [Senior Data Analyst](<2022-08 Real Estate Company - Senior Data Analyst/README.md>) | Rental listings: KPIs and how to improve them | EDA, maps (geopandas) | 
+| 2023-05 | [Growth Data Analyst](<2023-05 Startup - Growth Data Analyst/README.md>) | Do users walk more after installing the app? | A/B style tests (t-test, Bayesian) |
+| 2023-06 | [Data Automation Specialist](<2023-06 Anti Virus Company - Data Automation Specialist/README.md>) | API data, sales forecast, campaign dashboard | Time series (SARIMA), Tableau | 
 
 > Company names are hidden on purpose (e.g. "Gambling Company"). Each report starts with a short TL;DR (a summary of the key points).
 
