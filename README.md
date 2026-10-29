@@ -19,10 +19,12 @@ In technology, writing code is only half the battle; the other half is communica
 | 2020-12 | [Data Scientist](<2020-12 Gambling Company - Data Scientist/README.md>) | Find which betting customers will become VIP | Classification (Logistic, Random Forest, XGBoost), log loss | 
 | 2020-12 | [Data Science Analyst](<2020-12 Startup - Data Science Analyst/README.md>) | Group users to target in a marketing campaign | Clustering (K-means, elbow method) |
 | 2022-08 | [Senior Data Analyst](<2022-08 Real Estate Company - Senior Data Analyst/README.md>) | Rental listings: KPIs and how to improve them | EDA, maps (geopandas) | 
-| 2023-05 | [Growth Data Analyst](<2023-05 Startup - Growth Data Analyst/README.md>) | Do users walk more after installing the app? | A/B style tests (t-test, Bayesian) |
+| 2023-05 | [Growth Data Analyst](<2023-05 Startup - Growth Data Analyst/README.md>) | Do users walk more after installing the app? | A/B style tests (t-test, Bayesian), placebo test, difference in differences |
 | 2023-06 | [Data Automation Specialist](<2023-06 Anti Virus Company - Data Automation Specialist/README.md>) | API data, sales forecast, campaign dashboard | Time series (SARIMA), Tableau | 
 
-> Company names are hidden on purpose (e.g. "Gambling Company"). Each report starts with a short TL;DR (a summary of the key points).
+👉 **Short on time? Start with [Growth Data Analyst (2023-05)](<2023-05 Startup - Growth Data Analyst/README.md>)**, the most complete one. The projects are in date order, so you can also see how my work improved over time.
+
+> Company names are hidden on purpose (e.g. "Gambling Company"). Each report starts with a short TL;DR (a summary of the key points) and ends with its limitations: what I would do differently today.
 
 ---
 

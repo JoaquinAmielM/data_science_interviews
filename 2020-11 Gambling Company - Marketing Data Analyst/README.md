@@ -29,16 +29,7 @@ The aim is to predict the house prices from a specific dataset using a regressio
 
 **1. Data management**
 
-- Missing values were replaced.
-- Columns where (almost) every house has the same value were deleted, because they can't explain differences in price.
-- Categories with fewer than 30 houses were merged into "Other": with so few houses we can't draw reliable conclusions about them.
-- Some text variables were turned into scores (an ordinal scale), for example: ('No':0, 'Po':1, 'Fa':2, 'TA':3, 'Gd':4, 'Ex':5), from "none" to "excellent".
-- Some years were fixed so they make sense together (for example, a house can't be sold before it was built): garage year built, remodel year (*YearRemodAdd*) and year sold (*YrSold*).
-- Variables whose name starts with a number were renamed.
-- Variables that can be calculated from other variables were deleted (they add no new information).
-- Variables that are zero for almost every house were deleted.
-- When two variables carried almost the same information (high correlation), one of them was deleted. This avoids multicollinearity, which makes the model's numbers unstable and hard to read.
-- Outliers (values much bigger than the rest) were capped: above a chosen cut-off, the value is set to the cut-off.
+- The data was cleaned: missing values filled, typos and rare categories fixed, repeated variables removed and outliers capped (details in section 2).
 
 **2. Descriptive statistics**
 
@@ -76,414 +67,29 @@ These features may or may not end up in the final model: the averages look at ea
 - Another plus of lasso: when a variable barely helps, lasso sets its coefficient (its weight in the formula) to zero, which removes it from the model and keeps the model simple.
 - The model meets the main assumptions of linear regression (checked in section 4.3.3).
 - The model beats the baseline (giving every house the average price) by far. Its Mean Absolute Error (MAE) is 1,162 USD: on average it misses a house's price by 1,162 USD, against 12,817 USD for the baseline. With an average price of 178,777 USD, that is a very good estimate.
-- The factors that influence the sale price of a house are:
-  - **LotFrontage**: Linear feet of street connected to property.
-  - **LotArea**: Lot size in square feet.
-  - **BsmtFullBath**: Basement full bathrooms.
-  - **BedroomAbvGr**: Number of bedrooms above basement level.
-  - **MoSold**: Month Sold.
-  - **Neighborhood**: Physical locations.
-  - **BldgType**: Type of dwelling.
-  - **Exterior2nd**: Exterior covering on house (if more than one material).
-  - **MasVnrType**: Masonry veneer type.
-  - **Foundation**: Type of foundation.
-  - **GarageType**: Garage location.
-  - **SaleType**: Type of sale.
-
-How to read each coefficient ($\beta_{k}$): it is how much the price changes when that variable goes up by one unit, **while all the other variables stay the same**:
-
-- **LotFrontage**: each extra foot of street touching the property adds 2.29 USD to the price.
-- **LotArea**: each extra square foot of land adds 1.87 USD.
-- **BsmtFullBath**: each full bathroom in the basement lowers the price by 149.08 USD. A possible reason: a house with more bathrooms in the basement has fewer in the rest of the house, and a basement bathroom is less comfortable.
-- **BedroomAbvGr**: each extra bedroom above the basement adds 12,906.88 USD.
-- **Neighborhood**: a house in Mitchel is worth 241.27 USD more than in the other neighbourhoods.
-- **BldgType**: a townhouse is worth 350.55 USD more than other types of dwelling.
-- **Exterior2nd**: if the second exterior covering (when there is more than one material) is vinyl siding, the price drops by 116.38 USD compared with other coverings.
-- **MasVnrType**: a stone masonry veneer (a decorative stone layer on the walls) lowers the price by 199.17 USD compared with other types.
-- **Foundation**: a cinder block foundation adds 35.08 USD compared with other foundations.
-- **GarageType**: a garage in the basement, a car port, or more than one type of garage adds 732.28 USD.
-- **SaleType**: a sale by contract lowers the price by 727.83 USD, and a brand-new house adds 673.28 USD (both compared with warranty, court and other sales).
-- **MoSold**: for each month later in the year (January = 1 to December = 12), the price goes up by 1,137 USD on average. Prices follow supply and demand, so months with more buyers bring higher prices.
+- The biggest drivers of the price (all of them, explained, in section 4.3.3):
+  - each extra bedroom above the basement adds about 12,900 USD;
+  - each month later in the year adds about 1,140 USD;
+  - the garage type and the type of sale move the price by about 700 USD;
+  - the rest (neighbourhood, type of dwelling, materials, basement bathrooms) move it by a few hundred USD or less;
+  - each extra square foot of land adds about 1.9 USD, and each extra foot of street front about 2.3 USD.
 
 Other models (Random Forest and XGBoost) were also tested, but they did worse than lasso.
 
 ## 2. Data management
 
-### 2.1 Read files
-
-> **In this section** we load the Excel file from the gamblingCompany drive folder: one sheet with the sale price and another one with the characteristics of each valued house, both indexed by the house Id. The first rows and the size of the characteristics table were checked.
-
-First, we read the Excel file. One sheet has the sale price and the other has the features of each house.
-
-The dataset contains 1,459 houses and 79 variables.
-
-### 2.2 Categorical variables treatment
-
-#### 2.2.1 Summary measures
-
-> **In this section** we describe the text (categorical) variables: how many houses have a value (count), how many different values exist (unique), which value is the most frequent (top) and how many times it appears (freq). The gaps between count and 1,459 are the missing values that the next sections deal with.
-
-**Output (summary of the categorical variables):**
-
-| Variable      |   count |   unique | top     |   freq |
-|:--------------|--------:|---------:|:--------|-------:|
-| MSZoning      |    1455 |        5 | RL      |   1114 |
-| Street        |    1459 |        2 | Pave    |   1453 |
-| Alley         |     107 |        2 | Grvl    |     70 |
-| LotShape      |    1459 |        4 | Reg     |    934 |
-| LandContour   |    1459 |        4 | Lvl     |   1311 |
-| Utilities     |    1457 |        1 | AllPub  |   1457 |
-| LotConfig     |    1459 |        5 | Inside  |   1081 |
-| LandSlope     |    1459 |        3 | Gtl     |   1396 |
-| Neighborhood  |    1459 |       25 | NAmes   |    218 |
-| Condition1    |    1459 |        9 | Norm    |   1251 |
-| Condition2    |    1459 |        5 | Norm    |   1444 |
-| BldgType      |    1459 |        5 | 1Fam    |   1205 |
-| HouseStyle    |    1459 |        7 | 1Story  |    745 |
-| RoofStyle     |    1459 |        6 | Gable   |   1169 |
-| RoofMatl      |    1459 |        4 | CompShg |   1442 |
-| Exterior1st   |    1458 |       13 | VinylSd |    510 |
-| Exterior2nd   |    1458 |       15 | VinylSd |    510 |
-| MasVnrType    |    1443 |        4 | None    |    878 |
-| ExterQual     |    1459 |        4 | TA      |    892 |
-| ExterCond     |    1459 |        5 | TA      |   1256 |
-| Foundation    |    1459 |        6 | PConc   |    661 |
-| BsmtQual      |    1415 |        4 | TA      |    634 |
-| BsmtCond      |    1414 |        4 | TA      |   1295 |
-| BsmtExposure  |    1415 |        4 | No      |    951 |
-| BsmtFinType1  |    1417 |        6 | GLQ     |    431 |
-| BsmtFinType2  |    1417 |        6 | Unf     |   1237 |
-| Heating       |    1459 |        4 | GasA    |   1446 |
-| HeatingQC     |    1459 |        5 | Ex      |    752 |
-| CentralAir    |    1459 |        2 | Y       |   1358 |
-| Electrical    |    1459 |        4 | SBrkr   |   1337 |
-| KitchenQual   |    1458 |        4 | TA      |    757 |
-| Functional    |    1457 |        7 | Typ     |   1357 |
-| FireplaceQu   |     729 |        5 | Gd      |    364 |
-| GarageType    |    1383 |        6 | Attchd  |    853 |
-| GarageFinish  |    1381 |        3 | Unf     |    625 |
-| GarageQual    |    1381 |        4 | TA      |   1293 |
-| GarageCond    |    1381 |        5 | TA      |   1328 |
-| PavedDrive    |    1459 |        3 | Y       |   1301 |
-| PoolQC        |       3 |        2 | Ex      |      2 |
-| Fence         |     290 |        4 | MnPrv   |    172 |
-| MiscFeature   |      51 |        3 | Shed    |     46 |
-| SaleType      |    1458 |        9 | WD      |   1258 |
-| SaleCondition |    1459 |        6 | Normal  |   1204 |
-
-#### 2.2.2 Delete columns
-
-> **In this section** we drop six columns: *Utilities*, *Street*, *Condition2*, *RoofMatl*, *Heating* and *PoolQC*.
-
-- Variables with only one value (*Utilities*: one category plus a few blanks), because a column that never changes can't explain anything and only adds noise (it can lead to overfitting).
-- Variables where the vast majority of houses share one value (*Street*, *Condition2*, *RoofMatl*, *Heating*).
-- Variables that are mostly empty (NaN = missing value), like *PoolQC*.
-
-#### 2.2.3 Replace missing values
-
-> **In this section** we fill the missing values of every categorical variable. When the gap means that the house does not have the thing (no alley, no basement, no fireplace, no garage, no fence), the gap is filled with a "No" category; when the gap is simply unknown, it is filled with the most typical value (*TA* for the kitchen quality, *Typ* for functionality) or with an "Other" category. The counts below show how each variable looks after filling it. There is one house without kitchen quality and it does have a kitchen, so the average value was used.
-
-**Output (value counts after replacing the missing values):**
-
-```text
-Alley              MSZoning           Exterior1st        Exterior2nd
-No      1352       RL         1114    VinylSd    510     VinylSd    510
-Grvl      70       RM          242    MetalSd    230     MetalSd    233
-Pave      37       FV           74    HdBoard    220     HdBoard    199
-                   C (all)      15    Wd Sdng    205     Wd Sdng    194
-                   RH           10    Plywood    113     Plywood    128
-                   Other         4    CemntBd     65     CmentBd     66
-                                      BrkFace     37     Wd Shng     43
-                                      WdShing     30     BrkFace     22
-                                      AsbShng     24     Stucco      21
-                                      Stucco      18     AsbShng     18
-                                      BrkComm      4     Brk Cmn     15
-                                      CBlock       1     ImStucc      5
-                                      AsphShn      1     CBlock       2
-                                      Other        1     AsphShn      1
-                                                         Other        1
-                                                         Stone        1
-
-MasVnrType         BsmtQual           BsmtCond           BsmtExposure
-None       894     TA    634          TA    1295         No    951
-BrkFace    434     Gd    591          Fa      59         Av    197
-Stone      121     Ex    137          Gd      57         Gd    142
-BrkCmn      10     Fa     53          No      45         Mn    125
-                   No     44          Po       3         Nb     44
-
-BsmtFinType1       BsmtFinType2       KitchenQual        Functional
-GLQ    431         Unf    1237        TA    758          Typ     1359
-Unf    421         Rec      51        Gd    565          Min2      36
-ALQ    209         Nb       42        Ex    105          Min1      34
-Rec    155         LwQ      41        Fa     31          Mod       20
-BLQ    121         BLQ      35                           Maj1       5
-LwQ     80         ALQ      33                           Maj2       4
-Nb      42         GLQ      20                           Sev        1
-
-FireplaceQu        GarageType         GarageFinish       GarageQual
-No    730          Attchd     853     Unf    625         TA    1293
-Gd    364          Detchd     392     RFn    389         No      78
-TA    279          BuiltIn     98     Fin    367         Fa      76
-Fa     41          No          76     No      78         Gd      10
-Po     26          Basment     17                        Po       2
-Ex     19          2Types      17
-                   CarPort      6
-
-GarageCond         Fence              MiscFeature        SaleType
-Ex       1         No       1169      No      1408       WD       1258
-Fa      39         MnPrv     172      Shed      46       New       117
-Gd       6         GdPrv      59      Gar2       3       COD        44
-No      78         GdWo       58      Othr       2       ConLD      17
-Po       7         MnWw        1                         CWD         8
-TA    1328                                               Oth         5
-                                                         ConLI       4
-                                                         Con         3
-                                                         ConLw       3
-```
-
-#### 2.2.4 Transform
-
-> **In this section** we turn the quality and condition variables into numbers (an ordinal scale), so the model uses one column per variable instead of one column per category.
-
-Some text variables were turned into scores (an ordinal scale), for example: ('No':0, 'Po':1, 'Fa':2, 'TA':3, 'Gd':4, 'Ex':5). This way each variable is one number instead of one 0/1 column per category, so the model has fewer parameters (numbers to learn).
-
-#### 2.2.5 Analyse the rest of the categorical variables
-
-> **In this section** we count the values of the categorical variables that are still text, in order to discover small categories (the ones with very few houses).
-
-**Output (value counts of the remaining categorical variables):**
-
-```text
-LotConfig          LandContour        Condition1         HouseStyle
-Inside     1081    Lvl    1311        Norm      1251     1Story    745
-Corner      248    HLS      70        Feedr       83     2Story    427
-CulDSac      82    Bnk      54        Artery      44     1.5Fin    160
-FR2          38    Low      24        RRAn        24     SLvl       63
-FR3          10                       PosN        20     SFoyer     46
-                                      RRAe        17     2.5Unf     13
-                                      PosA        12     1.5Unf      5
-                                      RRNe         4
-                                      RRNn         4
-
-RoofStyle          Foundation         Electrical         SaleCondition
-Gable      1169    PConc     661      SBrkr    1337      Normal     1204
-Hip         265    CBlock    601      FuseA      94      Partial     120
-Gambrel      11    BrkTil    165      FuseF      23      Abnorml      89
-Flat          7    Slab       25      FuseP       5      Family       26
-Mansard       4    Stone       5                         Alloca       12
-Shed          3    Wood        2                         AdjLand       8
-
-Neighborhood
-NAmes      218     Sawyer      77     Crawfor     52     MeadowV     20
-OldTown    126     SawyerW     66     BrkSide     50     ClearCr     16
-CollgCr    117     Mitchel     65     Timber      34     NPkVill     14
-Somerst     96     NWAmes      58     NoRidge     30     BrDale      14
-Edwards     94     IDOTRR      56     StoneBr     26     Veenker     13
-NridgHt     89                        SWISU       23     Blmngtn     11
-Gilbert     86                                           Blueste      8
-```
-
-#### 2.2.6 Group (small) categories
-
-> **In this section** we merge the small categories into bigger ones, either with a similar category (the *Wd Sdng* / *WdShing* / *Wd Shng* entries become one *Wood* category, which also solves the spaces and the typo of the exterior covering) or into an *Other* category. After the grouping, none of the 24 categorical variables that are left has a tiny category.
-
-Categories with fewer than 30 houses were merged into "Other" (or into a similar category), because with so few houses we can't draw reliable conclusions.
-
-**Output (summary of the categorical variables after the grouping):**
-
-| Variable      |   count |   unique | top      |   freq |
-|:--------------|--------:|---------:|:---------|-------:|
-| MSZoning      |    1459 |        4 | RL       |   1114 |
-| Alley         |    1459 |        3 | No       |   1352 |
-| LandContour   |    1459 |        4 | Lvl      |   1311 |
-| LotConfig     |    1459 |        4 | Inside   |   1081 |
-| Neighborhood  |    1459 |       17 | NAmes    |    218 |
-| Condition1    |    1459 |        5 | Norm     |   1251 |
-| BldgType      |    1459 |        5 | 1Fam     |   1205 |
-| HouseStyle    |    1459 |        5 | 1Story   |    750 |
-| RoofStyle     |    1459 |        3 | Gable    |   1169 |
-| Exterior1st   |    1459 |        8 | VinylSd  |    510 |
-| Exterior2nd   |    1459 |        8 | VinylSd  |    510 |
-| MasVnrType    |    1459 |        3 | None     |    894 |
-| Foundation    |    1459 |        4 | PConc    |    661 |
-| BsmtFinType1  |    1459 |        7 | GLQ      |    431 |
-| BsmtFinType2  |    1459 |        5 | Unf      |   1237 |
-| CentralAir    |    1459 |        2 | Y        |   1358 |
-| Electrical    |    1459 |        2 | SBrkr    |   1337 |
-| GarageType    |    1459 |        5 | Attchd   |    853 |
-| GarageFinish  |    1459 |        4 | Unf      |    625 |
-| PavedDrive    |    1459 |        3 | Y        |   1301 |
-| Fence         |    1459 |        4 | No       |   1169 |
-| MiscFeature   |    1459 |        2 | No       |   1413 |
-| SaleType      |    1459 |        4 | Warranty |   1271 |
-| SaleCondition |    1459 |        4 | Normal   |   1204 |
-
-### 2.3 Numeric variables treatment
-
-#### 2.3.1 Summary measures
-
-> **In this section** we describe the numeric variables (how many values, average, standard deviation — how spread the values are — minimum, the three quartiles and maximum) and then we fix the years that are not coherent: the invalid *GarageYrBlt* 2207 becomes 2007, a garage built before the house takes the construction year of the house, and the same idea is applied to the remodel year and to the year sold.
-
-**Output (summary of the numeric variables):**
-
-| Variable      |   count |     mean |      std |   min |     25% |    50% |      75% |   max |
-|:--------------|--------:|---------:|---------:|------:|--------:|-------:|---------:|------:|
-| MSSubClass    |    1459 |   57.378 |   42.747 |    20 |   20    |   50   |    70    |   190 |
-| LotFrontage   |    1232 |   68.58  |   22.377 |    21 |   58    |   67   |    80    |   200 |
-| LotArea       |    1459 | 9819.16  | 4955.52  |  1470 | 7391    | 9399   | 11517.5  | 56600 |
-| LotShape      |    1459 |    1.392 |    0.558 |     1 |    1    |    1   |     2    |     4 |
-| LandSlope     |    1459 |    2.955 |    0.218 |     1 |    3    |    3   |     3    |     3 |
-| OverallQual   |    1459 |    6.079 |    1.437 |     1 |    5    |    6   |     7    |    10 |
-| OverallCond   |    1459 |    5.554 |    1.114 |     1 |    5    |    5   |     6    |     9 |
-| YearBuilt     |    1459 | 1971.36  |   30.39  |  1879 | 1953    | 1973   |  2001    |  2010 |
-| YearRemodAdd  |    1459 | 1983.66  |   21.13  |  1950 | 1963    | 1992   |  2004    |  2010 |
-| MasVnrArea    |    1444 |  100.709 |  177.626 |     0 |    0    |    0   |   164    |  1290 |
-| ExterQual     |    1459 |    3.398 |    0.586 |     2 |    3    |    3   |     4    |     5 |
-| ExterCond     |    1459 |    3.088 |    0.393 |     1 |    3    |    3   |     3    |     5 |
-| BsmtQual      |    1459 |    3.466 |    0.934 |     0 |    3    |    3   |     4    |     5 |
-| BsmtCond      |    1459 |    2.902 |    0.597 |     0 |    3    |    3   |     3    |     4 |
-| BsmtExposure  |    1459 |    1.618 |    1.073 |     0 |    1    |    1   |     2    |     4 |
-| BsmtFinSF1    |    1458 |  439.204 |  455.268 |     0 |    0    |  350.5 |   753.5  |  4010 |
-| BsmtFinSF2    |    1458 |   52.619 |  176.754 |     0 |    0    |    0   |     0    |  1526 |
-| BsmtUnfSF     |    1458 |  554.295 |  437.26  |     0 |  219.25 |  460   |   797.75 |  2140 |
-| TotalBsmtSF   |    1458 | 1046.12  |  442.899 |     0 |  784    |  988   |  1305    |  5095 |
-| HeatingQC     |    1459 |    4.158 |    0.957 |     1 |    3    |    5   |     5    |     5 |
-| 1stFlrSF      |    1459 | 1156.54  |  398.166 |   407 |  873.5  | 1079   |  1382.5  |  5095 |
-| 2ndFlrSF      |    1459 |  325.968 |  420.61  |     0 |    0    |    0   |   676    |  1862 |
-| LowQualFinSF  |    1459 |    3.544 |   44.043 |     0 |    0    |    0   |     0    |  1064 |
-| GrLivArea     |    1459 | 1486.05  |  485.566 |   407 | 1117.5  | 1432   |  1721    |  5095 |
-| BsmtFullBath  |    1457 |    0.434 |    0.531 |     0 |    0    |    0   |     1    |     3 |
-| BsmtHalfBath  |    1457 |    0.065 |    0.252 |     0 |    0    |    0   |     0    |     2 |
-| FullBath      |    1459 |    1.571 |    0.555 |     0 |    1    |    2   |     2    |     4 |
-| HalfBath      |    1459 |    0.378 |    0.503 |     0 |    0    |    0   |     1    |     2 |
-| BedroomAbvGr  |    1459 |    2.854 |    0.83  |     0 |    2    |    3   |     3    |     6 |
-| KitchenAbvGr  |    1459 |    1.042 |    0.208 |     0 |    1    |    1   |     1    |     2 |
-| KitchenQual   |    1459 |    3.51  |    0.661 |     2 |    3    |    3   |     4    |     5 |
-| TotRmsAbvGrd  |    1459 |    6.385 |    1.509 |     3 |    5    |    6   |     7    |    15 |
-| Functional    |    1459 |    4.903 |    0.4   |     1 |    5    |    5   |     5    |     5 |
-| Fireplaces    |    1459 |    0.581 |    0.647 |     0 |    0    |    0   |     1    |     4 |
-| FireplaceQu   |    1459 |    1.711 |    1.801 |     0 |    0    |    0   |     4    |     5 |
-| GarageYrBlt   |    1381 | 1977.72  |   26.431 |  1895 | 1959    | 1979   |  2002    |  2207 |
-| GarageCars    |    1458 |    1.766 |    0.776 |     0 |    1    |    2   |     2    |     5 |
-| GarageArea    |    1458 |  472.769 |  217.049 |     0 |  318    |  480   |   576    |  1488 |
-| GarageQual    |    1459 |    2.792 |    0.709 |     0 |    3    |    3   |     3    |     4 |
-| GarageCond    |    1459 |    2.809 |    0.705 |     0 |    3    |    3   |     3    |     5 |
-| WoodDeckSF    |    1459 |   93.175 |  127.745 |     0 |    0    |    0   |   168    |  1424 |
-| OpenPorchSF   |    1459 |   48.314 |   68.883 |     0 |    0    |   28   |    72    |   742 |
-| EnclosedPorch |    1459 |   24.243 |   67.228 |     0 |    0    |    0   |     0    |  1012 |
-| 3SsnPorch     |    1459 |    1.794 |   20.208 |     0 |    0    |    0   |     0    |   360 |
-| ScreenPorch   |    1459 |   17.064 |   56.61  |     0 |    0    |    0   |     0    |   576 |
-| PoolArea      |    1459 |    1.744 |   30.492 |     0 |    0    |    0   |     0    |   800 |
-| MiscVal       |    1459 |   58.168 |  630.807 |     0 |    0    |    0   |     0    | 17000 |
-| MoSold        |    1459 |    6.104 |    2.722 |     1 |    4    |    6   |     8    |    12 |
-| YrSold        |    1459 | 2007.77  |    1.302 |  2006 | 2007    | 2008   |  2009    |  2010 |
-
-The years in *GarageYrBlt*, *YearRemodAdd* and *YrSold* were fixed so they make sense together (for example, a house can't be sold before it was built).
-
-#### 2.3.2 Replace NA
-
-> **In this section** we fill the missing values of the numeric variables with zero, because in all of them the gap means that the house does not have that element (no lot frontage, no masonry veneer, no basement, no garage).
-
-#### 2.3.3 Rename variable
-
-Variables whose name starts with a number were renamed (*1stFlrSF* to *FstFlrSF*, *2ndFlrSF* to *SndFlrSF* and *3SsnPorch* to *ThrSsnPorch*), because a name that starts with a number cannot be used directly in formulas.
-
-#### 2.3.4 Variables creations
-
-> **In this section** we add the three porch areas into a single *EnclosedPorch* variable and drop the other two, and we build an auxiliary flag that marks the houses that have a garage (it is only used for the checks of the next section, it is not a variable of the model).
-
-The enclosed porch, three-season porch and screen porch areas (in square feet) were added up into one variable, because they are basically the same thing: an enclosed porch.
-
-#### 2.3.5 Drop variables
-
-> **In this section** we check the reasons to drop six variables and then drop them: how many houses have miscellaneous worth more than 1,000 USD, how many have low quality finished area, how strongly the year the garage was built follows the year the house was built, and whether the basement areas add up exactly to the total basement area. The sum matches in the 1,459 houses, so *TotalBsmtSF* carries no extra information.
-
-- **PoolArea**: almost no house in the data has a pool.
-- **TotalBsmtSF**: it is just the sum of the other basement areas.
-- **GarageYrBlt**: it almost always matches *YearBuilt* (the garage is built with the house), and it has missing values.
-- **MSSubClass**: it is a mix of *HouseStyle* and *YearBuilt*, so it repeats information.
-- **MiscVal**: only a few houses have extras (miscellaneous features) worth more than 1,000 USD, which is tiny next to an average price of about 175,000 USD. Also, this value is part of the price itself, so using it would be like knowing part of the answer in advance. And most houses have no extras at all.
-- **LowQualFinSF**: only 14 houses have a value above zero.
-
-**Output (houses with miscellaneous value above 1,000 USD, and houses with low quality finished area):**
-
-```text
-MiscVal            LowQualFinSF
-1500     3         only 14 houses have a value above zero
-2000     3         (140, 697, 312, 436, 114, 80, 431,
-3000     2          205, 108, 362, 1064, 259, 450, 512
-4500     2          square feet, one house each)
-2500     1
-17000    1
-12500    1
-1512     1
-6500     1
-1200     1
-```
-
-**Output (correlation between the year the house was built and the year the garage was built):**
-
-```text
-             YearBuilt  GarageYrBlt
-YearBuilt     1.000000     0.862234
-GarageYrBlt   0.862234     1.000000
-```
-
-#### 2.3.6 Replace values
-
-> **In this section** we deal with unusual values and with outliers (values much bigger than the rest, which pull the model towards them). The very rare values are brought back to a normal level: the two houses with 2 half bathrooms in the basement are set to 1, the house with 3 full bathrooms in the basement is set to 2, and the two houses with no kitchen are set to 1. Then outliers are detected with the interquartile rule (a value is an outlier when it falls more than 1.5 interquartile ranges below the first quartile or above the third one), the distribution of the affected variables is plotted, and a cut-off point is read from each plot: everything above it is truncated to the cut-off. Finally we check whether a house says it has something (a basement, a fireplace) while its size is zero or the other way around: only one house was inconsistent (a basement with living quarters of zero square feet) and its basement type was set to unfinished.
-
-Unusual values, values that don't make sense, and outliers were checked and replaced.
-
-**Output (variables with outliers, with the lower and upper limits of the interquartile rule):**
-
-|               |   Outliers |   inferior |   superior |   Maximum |
-|:--------------|-----------:|-----------:|-----------:|----------:|
-| LotFrontage   |       15.0 |      -7.00 |     129.00 |     200.0 |
-| LotArea       |       60.0 |    1201.25 |   17707.25 |   56600.0 |
-| MasVnrArea    |      104.0 |    -243.00 |     405.00 |    1290.0 |
-| BsmtFinSF1    |        8.0 |   -1128.00 |    1880.00 |    4010.0 |
-| BsmtFinSF2    |      180.0 |       0.00 |       0.00 |    1526.0 |
-| BsmtUnfSF     |       26.0 |    -648.75 |    1665.25 |    2140.0 |
-| FstFlrSF      |       23.0 |     110.00 |    2146.00 |    5095.0 |
-| SndFlrSF      |        5.0 |   -1014.00 |    1690.00 |    1862.0 |
-| GrLivArea     |       44.0 |     212.25 |    2626.25 |    5095.0 |
-| TotRmsAbvGrd  |       21.0 |       2.00 |      10.00 |      15.0 |
-| GarageArea    |       21.0 |     -70.25 |     963.75 |    1488.0 |
-| WoodDeckSF    |       35.0 |    -252.00 |     420.00 |    1424.0 |
-| OpenPorchSF   |       79.0 |    -108.00 |     180.00 |     742.0 |
-| EnclosedPorch |      290.0 |     -60.75 |     101.25 |    1012.0 |
-
-The outlier check says these variables need a closer look, to cap their extreme values and get a more robust model (one that a few big values can't pull around):
-
-- LotArea
-- MasVnrArea
-- FstFlrSF
-- BsmtFinSF1
-- GrLivArea
-- WoodDeckSF
-- OpenPorchSF
-
-![Lot area distribution](plots/plot1_lot_area_distribution.png)
-
-![Masonry veneer area distribution](plots/plot2_masonry_veneer_area_distribution.png)
-
-![First floor square feet distribution](plots/plot3_first_floor_sf_distribution.png)
-
-![Above grade living area distribution](plots/plot4_above_grade_living_area_distribution.png)
-
-![Wood deck area distribution](plots/plot5_wood_deck_area_distribution.png)
-
-![Open porch area distribution](plots/plot6_open_porch_area_distribution.png)
-
-From the previous charts we determine the cut-off points from which the data will be truncated: 30,000 square feet for *LotArea*, 600 for *MasVnrArea*, 3,000 for *FstFlrSF*, 3,000 for *GrLivArea*, 600 for *WoodDeckSF* and 300 for *OpenPorchSF*.
-
-We also check for houses that say they have something (like a basement) but its size is 0, or the other way around. The pairs checked are:
-
-- no basement and BsmtFinSF1
-- no basement and BsmtFinSF2
-- no basement and BsmtUnfSF
-- Fireplaces and FireplaceQu
+> **In this section** we clean the data so the model can use it. The dataset has 1,459 houses and 79 variables. Every step, with its tables and charts, is in [Appendix A](#appendix-a-data-management-in-detail).
+
+- Missing values were replaced.
+- Columns where (almost) every house has the same value were deleted, because they can't explain differences in price.
+- Categories with fewer than 30 houses were merged into "Other": with so few houses we can't draw reliable conclusions about them.
+- Some text variables were turned into scores (an ordinal scale), for example: ('No':0, 'Po':1, 'Fa':2, 'TA':3, 'Gd':4, 'Ex':5), from "none" to "excellent".
+- Some years were fixed so they make sense together (for example, a house can't be sold before it was built): garage year built, remodel year (*YearRemodAdd*) and year sold (*YrSold*).
+- Variables whose name starts with a number were renamed.
+- Variables that can be calculated from other variables were deleted (they add no new information).
+- Variables that are zero for almost every house were deleted.
+- When two variables carried almost the same information (high correlation), one of them was deleted. This avoids multicollinearity, which makes the model's numbers unstable and hard to read.
+- Outliers (values much bigger than the rest) were capped: above a chosen cut-off, the value is set to the cut-off.
 
 ## 3. Descriptive analysis
 
@@ -587,9 +193,748 @@ For these other variables the relationship does make some sense, so they were ke
 
 ### 3.4 Relations with the sale price - categorical variables
 
-> **In this section** we compare the average sale price of each category of the remaining 24 categorical variables, together with the number of houses in each category, because an average built on very few houses is not reliable. The neighbourhoods are also grouped into four socioeconomic levels according to their average price.
+> **In this section** we compare the average sale price of each category of the remaining 24 categorical variables, together with the number of houses in each category, because an average built on very few houses is not reliable. One table per variable is in [Appendix B](#appendix-b-average-sale-price-by-category).
 
-**Output (summary of the categorical variables that reach this point):**
+Neighbourhoods were grouped into 4 socioeconomic levels, based on their house prices:
+
+- Rich
+- Medium-rich
+- Medium-poor
+- Poor
+
+![Sale price by neighbourhood](plots/plot13_sale_price_by_neighbourhood.png)
+
+*The bars are the average sale price in USD of each neighbourhood, coloured by socioeconomic level. The horizontal axis label on the chart is wrong: it shows the average price, not a correlation.*
+
+In short:
+
+- **Higher price:** low density residential zones, cul-de-sacs, duplexes, two or more stories, hip roofs, brick or plywood covering, brick masonry veneer, central air, circuit breakers, built-in garages, sheds and new houses.
+- **Lower price:** floating village and medium density zones, paved alleys, townhouses, split foyer houses, cement board or metal siding, fuse electrical systems, detached garages, no paved driveway and sales by contract.
+
+## 4. Regression analysis
+
+### 4.1 Basic preprocessing
+
+> **In this section** we prepare the data for the model: every remaining text variable becomes a set of 0/1 columns (one per category, dropping the first one so there is no redundancy), the data is split into training and test sets (80% / 20%), the seven most expensive houses of the training set are removed, and all the columns are standardized (each value minus the average, divided by the standard deviation) so that variables measured in different units weigh the same.
+
+The data was split into two separate groups (no house is in both):
+
+- **Train**: the houses the model learns from.
+- **Test**: houses kept aside to check how well the model works on houses it has never seen.
+
+![QQ plot of the training set before removing the atypical houses](plots/plot14_qqplot_train_before.png)
+
+Atypical houses (sale price above 245,000 USD) were removed from the training set.
+
+**Output (ten most expensive houses of the training set):**
+
+| Id   |   SalePrice |
+|:-----|------------:|
+| 2189 |  281643.98 |
+| 2251 |  280618.13 |
+| 2264 |  277936.13 |
+| 2797 |  259423.86 |
+| 1948 |  255629.49 |
+| 2265 |  249768.28 |
+| 2901 |  245283.20 |
+| 2823 |  235419.37 |
+| 2600 |  234707.21 |
+| 2754 |  234492.25 |
+
+![QQ plot of the training set after removing the atypical houses](plots/plot15_qqplot_train_after.png)
+
+The sale price now looks much closer to a **normal distribution** than before.
+
+### 4.2 Baseline
+
+> **In this section** we build the baseline, the simplest possible prediction: giving every house of the test set the average price of the training set. Any model has to beat this. The errors are the Mean Absolute Error (the average size of the mistake, in USD), the Mean Squared Error (the average of the squared mistakes, which punishes the big ones) and its square root.
+
+To know if a model is good, we compare it with a baseline: a very simple prediction that any useful model must beat. Here the baseline gives every house the average price of the training set.
+
+**Output (baseline):**
+
+```text
+Base: 178777.25
+Mean Absolute Error: 12817.26
+Mean Squared Error: 280169188.19
+Root Mean Squared Error: 16738.26
+```
+
+### 4.3 Linear regression techniques
+
+1. **Simple Linear Regression**: finds the formula that makes the RSS (Residual Sum of Squares: the sum of the squared mistakes) as small as possible.
+2. **Ridge Regression**: the same, plus a penalty for big weights (the sum of the squared coefficients). This keeps the coefficients small.
+3. **Lasso Regression**: the same idea, but the penalty is the sum of the absolute values of the coefficients. This can push some coefficients to exactly zero, which removes those variables.
+
+Ridge and lasso punish a model that leans on too many variables. That helps avoid overfitting (great results on the training data, poor results on new data), so these two are the ones used here.
+
+#### 4.3.1 Ridge regression
+
+> **In this section** we search the best penalty strength (alpha) for the ridge regression with a grid search and 5 fold cross validation (the training data is split in five parts, the model is trained five times and each part is used once to check it), and then we measure the errors in the test set and in the training set.
+
+**Output (ridge regression, test set):**
+
+```text
+Mean Absolute Error: 1210.08
+Mean Squared Error: 4075012.77
+Root Mean Squared Error: 2018.67
+```
+
+**Output (ridge regression, training set):**
+
+```text
+Mean Absolute Error: 956.54
+Mean Squared Error: 1659589.63
+Root Mean Squared Error: 1288.25
+```
+
+**Output (best parameters):**
+
+```text
+{'alpha': 1.83, 'fit_intercept': True}
+```
+
+#### 4.3.2 Lasso regression
+
+> **In this section** we repeat the same search for the lasso regression, with 3 fold cross validation, and we also compute the ratio between the test error and the training error, which shows how much the model gets worse on data it has never seen.
+
+**Output (lasso regression, test set):**
+
+```text
+Mean Absolute Error: 1157.62
+Mean Squared Error: 3870212.04
+Root Mean Squared Error: 1967.29
+```
+
+**Output (lasso regression, training set):**
+
+```text
+Mean Absolute Error: 988.48
+Mean Squared Error: 1857951.53
+Root Mean Squared Error: 1363.07
+```
+
+**Output (best parameters):**
+
+```text
+{'alpha': 60.804020100502505, 'fit_intercept': True}
+```
+
+Lasso has the smallest error on the test set (houses the model never saw), and the smallest gap between its training and test errors. A small gap means less overfitting: the model learned general patterns instead of memorizing the training houses. So lasso was chosen for this data.
+
+| Result in test set | Ridge | Lasso |
+|--|--|--|
+| Mean Absolute Error | 1210 | **1157** |
+| Root Mean Squared Error | 2018 | **1967** |
+
+Another plus of lasso: when a variable barely helps, lasso sets its coefficient (its weight in the formula) to zero, which removes it from the model and keeps the model simple.
+
+**Output (ratio between test and training results):**
+
+```text
+Mean Absolute Error: 1.17
+Root Mean Squared Error: 1.44
+```
+
+On the test set, the Mean Absolute Error (MAE) is 17% worse than on the training set. The Root Mean Squared Error (RMSE) is 44% worse, but the RMSE is more sensitive to a few big mistakes (outliers).
+
+<details>
+<summary>Output (variables kept by the lasso, with their coefficients) (click to open)</summary>
+
+| Columns              |   coefficients |
+|:---------------------|---------------:|
+| LotFrontage          |      28.472497 |
+| LotArea              |    7981.662150 |
+| ExterQual            |     -31.131587 |
+| ExterCond            |     -11.313681 |
+| BsmtCond             |     -30.046489 |
+| BsmtFullBath         |     -32.388232 |
+| BedroomAbvGr         |   10619.207556 |
+| TotRmsAbvGrd         |      95.363553 |
+| FireplaceQu          |     -19.813525 |
+| MoSold               |    3071.143628 |
+| Neighborhood_Mitchel |      14.519903 |
+| BldgType_Twnhs       |       6.451782 |
+| Exterior2nd_VinylSd  |      -6.231214 |
+| MasVnrType_Stone     |     -12.136795 |
+| Foundation_CBlock    |      10.754260 |
+| BsmtFinType1_GLQ     |     -17.273508 |
+| GarageType_Other     |      81.688189 |
+| GarageFinish_RFn     |      33.069807 |
+| SaleType_Contract    |     -60.013675 |
+| SaleType_New         |     130.817815 |
+
+</details>
+
+Some variables were deleted because their effect in the model was not the expected one (it made no sense):
+
+- BsmtCond
+- ExterQual
+- ExterCond
+- FireplaceQu
+- BsmtFinType1_GLQ
+- GarageFinish_RFn
+
+#### 4.3.3 Lasso regression - version 2
+
+> **In this section** we train the lasso again with only the variables that behave as expected. *TotRmsAbvGrd* is also dropped because it is highly correlated with *BedroomAbvGr*, and the VIF (variance inflation factor, a number that says how much a variable can be explained by the others: above 10 means trouble) confirms that the remaining 13 variables are not redundant. The whole preparation is repeated with this reduced set (split, removal of the seven most expensive houses, standardization) and the errors are measured again.
+
+![Correlation plot of the variables of the final model](plots/plot16_correlation_plot_final_model_vars.png)
+
+*BedroomAbvGr* and *TotRmsAbvGrd* are highly correlated, and *Exterior2nd_VinylSd* and *Foundation_CBlock* moderately so; the rest have low correlations. So *TotRmsAbvGrd* was deleted, and there is little or no **multicollinearity** left (variables repeating each other's information).
+
+The VIF values confirm it: they are all below 10 (above 10 would signal a problem).
+
+**Output (VIF of the 13 variables of the model):**
+
+```text
+LotFrontage           4.48    MasVnrType_Stone     1.18
+LotArea               7.21    Foundation_CBlock    2.08
+BsmtFullBath          1.69    GarageType_Other     1.04
+BedroomAbvGr          8.86    SaleType_Contract    1.03
+MoSold                5.22    SaleType_New         1.27
+Neighborhood_Mitchel  1.08
+BldgType_Twnhs        1.16
+Exterior2nd_VinylSd   1.92
+```
+
+**Output (lasso version 2, test set):**
+
+```text
+Mean Absolute Error: 1162.47
+Mean Squared Error: 3901580.90
+Root Mean Squared Error: 1975.24
+```
+
+**Output (best parameters):**
+
+```text
+{'alpha': 34.67336683417085, 'fit_intercept': True}
+```
+
+> **In this section** we also check the two assumptions of the linear regression: that the residuals (the difference between the predicted price and the real price) have mean zero, and that they do not grow with the price of the house (heteroscedasticity).
+
+The residuals (real price minus predicted price) have a mean of zero.
+
+There is no heteroscedasticity: the size of the mistakes does not grow with the price of the house.
+
+![Relation between house price and residuals](plots/plot17_price_vs_residuals.png)
+
+*The horizontal axis is the real sale price in USD of the training houses and the vertical axis is the residual in USD.*
+
+<details>
+<summary>Output (coefficients of the final model, on standardized data) (click to open)</summary>
+
+| Columns              |   coefficients |
+|:---------------------|---------------:|
+| LotFrontage          |      74.062884 |
+| LotArea              |    8034.763189 |
+| BsmtFullBath         |     -78.691169 |
+| BedroomAbvGr         |   10709.981605 |
+| MoSold               |    3095.407213 |
+| Neighborhood_Mitchel |      49.795227 |
+| BldgType_Twnhs       |      65.610204 |
+| Exterior2nd_VinylSd  |     -55.512537 |
+| MasVnrType_Stone     |     -54.946391 |
+| Foundation_CBlock    |      17.273763 |
+| GarageType_Other     |     119.616335 |
+| SaleType_Contract    |     -98.123995 |
+| SaleType_New         |     182.917556 |
+
+</details>
+
+Now every coefficient goes in a direction that makes sense, and the model meets the assumptions of linear regression, so we can draw conclusions from it.
+
+First, the model beats the baseline (giving every house the average price) by far. Its Mean Absolute Error (MAE) is 1,162 USD: on average it misses a house's price by 1,162 USD, against 12,817 USD for the baseline. With an average price of 178,777 USD, that is a very good estimate.
+
+The data was standardized (each column divided by its standard deviation), so the coefficients are measured in "standard deviations". To read them in real units (USD per square foot, per bedroom...), each coefficient is divided by its variable's standard deviation.
+
+<details>
+<summary>Output (coefficients brought back to their real unit) (click to open)</summary>
+
+| Columns              |   coefficients |   standard_deviation |   coefficients_unit |
+|:---------------------|---------------:|---------------------:|--------------------:|
+| LotFrontage          |      74.062884 |            32.266054 |            2.295381 |
+| LotArea              |    8034.763189 |          4285.465336 |            1.874887 |
+| BsmtFullBath         |     -78.691169 |             0.527849 |         -149.078979 |
+| BedroomAbvGr         |   10709.981605 |             0.829788 |        12906.883352 |
+| MoSold               |    3095.407213 |             2.722432 |         1137.000786 |
+| Neighborhood_Mitchel |      49.795227 |             0.206387 |          241.271518 |
+| BldgType_Twnhs       |      65.610204 |             0.187165 |          350.547764 |
+| Exterior2nd_VinylSd  |     -55.512537 |             0.476993 |         -116.380251 |
+| MasVnrType_Stone     |     -54.946391 |             0.275876 |         -199.170419 |
+| Foundation_CBlock    |      17.273763 |             0.492351 |           35.084273 |
+| GarageType_Other     |     119.616335 |             0.163348 |          732.277529 |
+| SaleType_Contract    |     -98.123995 |             0.134818 |         -727.827126 |
+| SaleType_New         |     182.917556 |             0.271683 |          673.275188 |
+
+</details>
+
+How to read each coefficient ($\beta_{k}$): it is how much the price changes when that variable goes up by one unit, **while all the other variables stay the same**:
+
+- **LotFrontage**: each extra foot of street touching the property adds 2.29 USD to the price.
+- **LotArea**: each extra square foot of land adds 1.87 USD.
+- **BsmtFullBath**: each full bathroom in the basement lowers the price by 149.08 USD. A possible reason: a house with more bathrooms in the basement has fewer in the rest of the house, and a basement bathroom is less comfortable.
+- **BedroomAbvGr**: each extra bedroom above the basement adds 12,906.88 USD.
+- **Neighborhood**: a house in Mitchel is worth 241.27 USD more than in the other neighbourhoods.
+- **BldgType**: a townhouse is worth 350.55 USD more than other types of dwelling.
+- **Exterior2nd**: if the second exterior covering (when there is more than one material) is vinyl siding, the price drops by 116.38 USD compared with other coverings.
+- **MasVnrType**: a stone masonry veneer (a decorative stone layer on the walls) lowers the price by 199.17 USD compared with other types.
+- **Foundation**: a cinder block foundation adds 35.08 USD compared with other foundations.
+- **GarageType**: a garage in the basement, a car port, or more than one type of garage adds 732.28 USD.
+- **SaleType**: a sale by contract lowers the price by 727.83 USD, and a brand-new house adds 673.28 USD (both compared with warranty, court and other sales).
+- **MoSold**: for each month later in the year (January = 1 to December = 12), the price goes up by 1,137 USD on average. Prices follow supply and demand, so months with more buyers bring higher prices.
+
+The model meets the main assumptions of linear regression.
+
+### 4.4 Other regression techniques
+
+#### 4.4.1 Random forest regressor
+
+> **In this section** we try a random forest (many decision trees whose predictions are averaged) on the same 13 variables, searching 500 random combinations of its settings.
+
+**Output (random forest, test set):**
+
+```text
+Mean Absolute Error: 1788.23
+Mean Squared Error: 9477577.89
+Root Mean Squared Error: 3078.57
+```
+
+**Output (best parameters):**
+
+```text
+{'max_depth': 9, 'max_leaf_nodes': 59, 'n_estimators': 350}
+```
+
+#### 4.4.2 XGBoost
+
+> **In this section** we try a gradient boosting model (trees built one after another, each one correcting the mistakes of the previous ones), also with 500 random combinations of its settings.
+
+**Output (XGBoost, test set):**
+
+```text
+Mean Absolute Error: 1417.46
+Mean Squared Error: 6512115.98
+Root Mean Squared Error: 2551.88
+```
+
+Other models (Random Forest and XGBoost) were also tested, but they did worse than lasso.
+
+## 5. Limitations
+
+> **In this section** we list what I would do differently today.
+
+- **Deleting variables because their sign "makes no sense"** (*Functional* and *OverallCond* in section 3.3, and six more in section 4.3.2) is risky. An unexpected sign often shows up when two variables carry the same information and the model splits the effect between them, or it can be a real effect we did not expect. A safer way is to check how correlated those variables are, and keep or drop them based on the error on the test set, not on the sign.
+- **Deleting variables because of a low correlation with the price** (section 3.3) is risky too: a variable can matter when it is combined with others. Lasso can make that choice by itself.
+- **The month of sale is used as a number from 1 to 12**, so the model assumes the price grows steadily from January to December. Section 3.3 shows it does not (prices dip from February to April), so it would be better as a category or as seasons.
+- **The 7 most expensive houses were removed from the training set**, so the model is not built to price houses above 245,000 USD.
+
+## Appendix A: Data management in detail
+
+### A.1 Read files
+
+> **In this section** we load the Excel file from the gamblingCompany drive folder: one sheet with the sale price and another one with the characteristics of each valued house, both indexed by the house Id. The first rows and the size of the characteristics table were checked.
+
+First, we read the Excel file. One sheet has the sale price and the other has the features of each house.
+
+The dataset contains 1,459 houses and 79 variables.
+
+### A.2 Categorical variables treatment
+
+#### A.2.1 Summary measures
+
+> **In this section** we describe the text (categorical) variables: how many houses have a value (count), how many different values exist (unique), which value is the most frequent (top) and how many times it appears (freq). The gaps between count and 1,459 are the missing values that the next sections deal with.
+
+<details>
+<summary>Output (summary of the categorical variables) (click to open)</summary>
+
+| Variable      |   count |   unique | top     |   freq |
+|:--------------|--------:|---------:|:--------|-------:|
+| MSZoning      |    1455 |        5 | RL      |   1114 |
+| Street        |    1459 |        2 | Pave    |   1453 |
+| Alley         |     107 |        2 | Grvl    |     70 |
+| LotShape      |    1459 |        4 | Reg     |    934 |
+| LandContour   |    1459 |        4 | Lvl     |   1311 |
+| Utilities     |    1457 |        1 | AllPub  |   1457 |
+| LotConfig     |    1459 |        5 | Inside  |   1081 |
+| LandSlope     |    1459 |        3 | Gtl     |   1396 |
+| Neighborhood  |    1459 |       25 | NAmes   |    218 |
+| Condition1    |    1459 |        9 | Norm    |   1251 |
+| Condition2    |    1459 |        5 | Norm    |   1444 |
+| BldgType      |    1459 |        5 | 1Fam    |   1205 |
+| HouseStyle    |    1459 |        7 | 1Story  |    745 |
+| RoofStyle     |    1459 |        6 | Gable   |   1169 |
+| RoofMatl      |    1459 |        4 | CompShg |   1442 |
+| Exterior1st   |    1458 |       13 | VinylSd |    510 |
+| Exterior2nd   |    1458 |       15 | VinylSd |    510 |
+| MasVnrType    |    1443 |        4 | None    |    878 |
+| ExterQual     |    1459 |        4 | TA      |    892 |
+| ExterCond     |    1459 |        5 | TA      |   1256 |
+| Foundation    |    1459 |        6 | PConc   |    661 |
+| BsmtQual      |    1415 |        4 | TA      |    634 |
+| BsmtCond      |    1414 |        4 | TA      |   1295 |
+| BsmtExposure  |    1415 |        4 | No      |    951 |
+| BsmtFinType1  |    1417 |        6 | GLQ     |    431 |
+| BsmtFinType2  |    1417 |        6 | Unf     |   1237 |
+| Heating       |    1459 |        4 | GasA    |   1446 |
+| HeatingQC     |    1459 |        5 | Ex      |    752 |
+| CentralAir    |    1459 |        2 | Y       |   1358 |
+| Electrical    |    1459 |        4 | SBrkr   |   1337 |
+| KitchenQual   |    1458 |        4 | TA      |    757 |
+| Functional    |    1457 |        7 | Typ     |   1357 |
+| FireplaceQu   |     729 |        5 | Gd      |    364 |
+| GarageType    |    1383 |        6 | Attchd  |    853 |
+| GarageFinish  |    1381 |        3 | Unf     |    625 |
+| GarageQual    |    1381 |        4 | TA      |   1293 |
+| GarageCond    |    1381 |        5 | TA      |   1328 |
+| PavedDrive    |    1459 |        3 | Y       |   1301 |
+| PoolQC        |       3 |        2 | Ex      |      2 |
+| Fence         |     290 |        4 | MnPrv   |    172 |
+| MiscFeature   |      51 |        3 | Shed    |     46 |
+| SaleType      |    1458 |        9 | WD      |   1258 |
+| SaleCondition |    1459 |        6 | Normal  |   1204 |
+
+</details>
+
+#### A.2.2 Delete columns
+
+> **In this section** we drop six columns: *Utilities*, *Street*, *Condition2*, *RoofMatl*, *Heating* and *PoolQC*.
+
+- Variables with only one value (*Utilities*: one category plus a few blanks), because a column that never changes can't explain anything and only adds noise (it can lead to overfitting).
+- Variables where the vast majority of houses share one value (*Street*, *Condition2*, *RoofMatl*, *Heating*).
+- Variables that are mostly empty (NaN = missing value), like *PoolQC*.
+
+#### A.2.3 Replace missing values
+
+> **In this section** we fill the missing values of every categorical variable. When the gap means that the house does not have the thing (no alley, no basement, no fireplace, no garage, no fence), the gap is filled with a "No" category; when the gap is simply unknown, it is filled with the most typical value (*TA* for the kitchen quality, *Typ* for functionality) or with an "Other" category. The counts below show how each variable looks after filling it. There is one house without kitchen quality and it does have a kitchen, so the average value was used.
+
+<details>
+<summary>Output (value counts after replacing the missing values) (click to open)</summary>
+
+```text
+Alley              MSZoning           Exterior1st        Exterior2nd
+No      1352       RL         1114    VinylSd    510     VinylSd    510
+Grvl      70       RM          242    MetalSd    230     MetalSd    233
+Pave      37       FV           74    HdBoard    220     HdBoard    199
+                   C (all)      15    Wd Sdng    205     Wd Sdng    194
+                   RH           10    Plywood    113     Plywood    128
+                   Other         4    CemntBd     65     CmentBd     66
+                                      BrkFace     37     Wd Shng     43
+                                      WdShing     30     BrkFace     22
+                                      AsbShng     24     Stucco      21
+                                      Stucco      18     AsbShng     18
+                                      BrkComm      4     Brk Cmn     15
+                                      CBlock       1     ImStucc      5
+                                      AsphShn      1     CBlock       2
+                                      Other        1     AsphShn      1
+                                                         Other        1
+                                                         Stone        1
+
+MasVnrType         BsmtQual           BsmtCond           BsmtExposure
+None       894     TA    634          TA    1295         No    951
+BrkFace    434     Gd    591          Fa      59         Av    197
+Stone      121     Ex    137          Gd      57         Gd    142
+BrkCmn      10     Fa     53          No      45         Mn    125
+                   No     44          Po       3         Nb     44
+
+BsmtFinType1       BsmtFinType2       KitchenQual        Functional
+GLQ    431         Unf    1237        TA    758          Typ     1359
+Unf    421         Rec      51        Gd    565          Min2      36
+ALQ    209         Nb       42        Ex    105          Min1      34
+Rec    155         LwQ      41        Fa     31          Mod       20
+BLQ    121         BLQ      35                           Maj1       5
+LwQ     80         ALQ      33                           Maj2       4
+Nb      42         GLQ      20                           Sev        1
+
+FireplaceQu        GarageType         GarageFinish       GarageQual
+No    730          Attchd     853     Unf    625         TA    1293
+Gd    364          Detchd     392     RFn    389         No      78
+TA    279          BuiltIn     98     Fin    367         Fa      76
+Fa     41          No          76     No      78         Gd      10
+Po     26          Basment     17                        Po       2
+Ex     19          2Types      17
+                   CarPort      6
+
+GarageCond         Fence              MiscFeature        SaleType
+Ex       1         No       1169      No      1408       WD       1258
+Fa      39         MnPrv     172      Shed      46       New       117
+Gd       6         GdPrv      59      Gar2       3       COD        44
+No      78         GdWo       58      Othr       2       ConLD      17
+Po       7         MnWw        1                         CWD         8
+TA    1328                                               Oth         5
+                                                         ConLI       4
+                                                         Con         3
+                                                         ConLw       3
+```
+
+</details>
+
+#### A.2.4 Transform
+
+> **In this section** we turn the quality and condition variables into numbers (an ordinal scale), so the model uses one column per variable instead of one column per category.
+
+Some text variables were turned into scores (an ordinal scale), for example: ('No':0, 'Po':1, 'Fa':2, 'TA':3, 'Gd':4, 'Ex':5). This way each variable is one number instead of one 0/1 column per category, so the model has fewer parameters (numbers to learn).
+
+#### A.2.5 Analyse the rest of the categorical variables
+
+> **In this section** we count the values of the categorical variables that are still text, in order to discover small categories (the ones with very few houses).
+
+<details>
+<summary>Output (value counts of the remaining categorical variables) (click to open)</summary>
+
+```text
+LotConfig          LandContour        Condition1         HouseStyle
+Inside     1081    Lvl    1311        Norm      1251     1Story    745
+Corner      248    HLS      70        Feedr       83     2Story    427
+CulDSac      82    Bnk      54        Artery      44     1.5Fin    160
+FR2          38    Low      24        RRAn        24     SLvl       63
+FR3          10                       PosN        20     SFoyer     46
+                                      RRAe        17     2.5Unf     13
+                                      PosA        12     1.5Unf      5
+                                      RRNe         4
+                                      RRNn         4
+
+RoofStyle          Foundation         Electrical         SaleCondition
+Gable      1169    PConc     661      SBrkr    1337      Normal     1204
+Hip         265    CBlock    601      FuseA      94      Partial     120
+Gambrel      11    BrkTil    165      FuseF      23      Abnorml      89
+Flat          7    Slab       25      FuseP       5      Family       26
+Mansard       4    Stone       5                         Alloca       12
+Shed          3    Wood        2                         AdjLand       8
+
+Neighborhood
+NAmes      218     Sawyer      77     Crawfor     52     MeadowV     20
+OldTown    126     SawyerW     66     BrkSide     50     ClearCr     16
+CollgCr    117     Mitchel     65     Timber      34     NPkVill     14
+Somerst     96     NWAmes      58     NoRidge     30     BrDale      14
+Edwards     94     IDOTRR      56     StoneBr     26     Veenker     13
+NridgHt     89                        SWISU       23     Blmngtn     11
+Gilbert     86                                           Blueste      8
+```
+
+</details>
+
+#### A.2.6 Group (small) categories
+
+> **In this section** we merge the small categories into bigger ones, either with a similar category (the *Wd Sdng* / *WdShing* / *Wd Shng* entries become one *Wood* category, which also solves the spaces and the typo of the exterior covering) or into an *Other* category. After the grouping, none of the 24 categorical variables that are left has a tiny category.
+
+Categories with fewer than 30 houses were merged into "Other" (or into a similar category), because with so few houses we can't draw reliable conclusions.
+
+<details>
+<summary>Output (summary of the categorical variables after the grouping) (click to open)</summary>
+
+| Variable      |   count |   unique | top      |   freq |
+|:--------------|--------:|---------:|:---------|-------:|
+| MSZoning      |    1459 |        4 | RL       |   1114 |
+| Alley         |    1459 |        3 | No       |   1352 |
+| LandContour   |    1459 |        4 | Lvl      |   1311 |
+| LotConfig     |    1459 |        4 | Inside   |   1081 |
+| Neighborhood  |    1459 |       17 | NAmes    |    218 |
+| Condition1    |    1459 |        5 | Norm     |   1251 |
+| BldgType      |    1459 |        5 | 1Fam     |   1205 |
+| HouseStyle    |    1459 |        5 | 1Story   |    750 |
+| RoofStyle     |    1459 |        3 | Gable    |   1169 |
+| Exterior1st   |    1459 |        8 | VinylSd  |    510 |
+| Exterior2nd   |    1459 |        8 | VinylSd  |    510 |
+| MasVnrType    |    1459 |        3 | None     |    894 |
+| Foundation    |    1459 |        4 | PConc    |    661 |
+| BsmtFinType1  |    1459 |        7 | GLQ      |    431 |
+| BsmtFinType2  |    1459 |        5 | Unf      |   1237 |
+| CentralAir    |    1459 |        2 | Y        |   1358 |
+| Electrical    |    1459 |        2 | SBrkr    |   1337 |
+| GarageType    |    1459 |        5 | Attchd   |    853 |
+| GarageFinish  |    1459 |        4 | Unf      |    625 |
+| PavedDrive    |    1459 |        3 | Y        |   1301 |
+| Fence         |    1459 |        4 | No       |   1169 |
+| MiscFeature   |    1459 |        2 | No       |   1413 |
+| SaleType      |    1459 |        4 | Warranty |   1271 |
+| SaleCondition |    1459 |        4 | Normal   |   1204 |
+
+</details>
+
+### A.3 Numeric variables treatment
+
+#### A.3.1 Summary measures
+
+> **In this section** we describe the numeric variables (how many values, average, standard deviation — how spread the values are — minimum, the three quartiles and maximum) and then we fix the years that are not coherent: the invalid *GarageYrBlt* 2207 becomes 2007, a garage built before the house takes the construction year of the house, and the same idea is applied to the remodel year and to the year sold.
+
+<details>
+<summary>Output (summary of the numeric variables) (click to open)</summary>
+
+| Variable      |   count |     mean |      std |   min |     25% |    50% |      75% |   max |
+|:--------------|--------:|---------:|---------:|------:|--------:|-------:|---------:|------:|
+| MSSubClass    |    1459 |   57.378 |   42.747 |    20 |   20    |   50   |    70    |   190 |
+| LotFrontage   |    1232 |   68.58  |   22.377 |    21 |   58    |   67   |    80    |   200 |
+| LotArea       |    1459 | 9819.16  | 4955.52  |  1470 | 7391    | 9399   | 11517.5  | 56600 |
+| LotShape      |    1459 |    1.392 |    0.558 |     1 |    1    |    1   |     2    |     4 |
+| LandSlope     |    1459 |    2.955 |    0.218 |     1 |    3    |    3   |     3    |     3 |
+| OverallQual   |    1459 |    6.079 |    1.437 |     1 |    5    |    6   |     7    |    10 |
+| OverallCond   |    1459 |    5.554 |    1.114 |     1 |    5    |    5   |     6    |     9 |
+| YearBuilt     |    1459 | 1971.36  |   30.39  |  1879 | 1953    | 1973   |  2001    |  2010 |
+| YearRemodAdd  |    1459 | 1983.66  |   21.13  |  1950 | 1963    | 1992   |  2004    |  2010 |
+| MasVnrArea    |    1444 |  100.709 |  177.626 |     0 |    0    |    0   |   164    |  1290 |
+| ExterQual     |    1459 |    3.398 |    0.586 |     2 |    3    |    3   |     4    |     5 |
+| ExterCond     |    1459 |    3.088 |    0.393 |     1 |    3    |    3   |     3    |     5 |
+| BsmtQual      |    1459 |    3.466 |    0.934 |     0 |    3    |    3   |     4    |     5 |
+| BsmtCond      |    1459 |    2.902 |    0.597 |     0 |    3    |    3   |     3    |     4 |
+| BsmtExposure  |    1459 |    1.618 |    1.073 |     0 |    1    |    1   |     2    |     4 |
+| BsmtFinSF1    |    1458 |  439.204 |  455.268 |     0 |    0    |  350.5 |   753.5  |  4010 |
+| BsmtFinSF2    |    1458 |   52.619 |  176.754 |     0 |    0    |    0   |     0    |  1526 |
+| BsmtUnfSF     |    1458 |  554.295 |  437.26  |     0 |  219.25 |  460   |   797.75 |  2140 |
+| TotalBsmtSF   |    1458 | 1046.12  |  442.899 |     0 |  784    |  988   |  1305    |  5095 |
+| HeatingQC     |    1459 |    4.158 |    0.957 |     1 |    3    |    5   |     5    |     5 |
+| 1stFlrSF      |    1459 | 1156.54  |  398.166 |   407 |  873.5  | 1079   |  1382.5  |  5095 |
+| 2ndFlrSF      |    1459 |  325.968 |  420.61  |     0 |    0    |    0   |   676    |  1862 |
+| LowQualFinSF  |    1459 |    3.544 |   44.043 |     0 |    0    |    0   |     0    |  1064 |
+| GrLivArea     |    1459 | 1486.05  |  485.566 |   407 | 1117.5  | 1432   |  1721    |  5095 |
+| BsmtFullBath  |    1457 |    0.434 |    0.531 |     0 |    0    |    0   |     1    |     3 |
+| BsmtHalfBath  |    1457 |    0.065 |    0.252 |     0 |    0    |    0   |     0    |     2 |
+| FullBath      |    1459 |    1.571 |    0.555 |     0 |    1    |    2   |     2    |     4 |
+| HalfBath      |    1459 |    0.378 |    0.503 |     0 |    0    |    0   |     1    |     2 |
+| BedroomAbvGr  |    1459 |    2.854 |    0.83  |     0 |    2    |    3   |     3    |     6 |
+| KitchenAbvGr  |    1459 |    1.042 |    0.208 |     0 |    1    |    1   |     1    |     2 |
+| KitchenQual   |    1459 |    3.51  |    0.661 |     2 |    3    |    3   |     4    |     5 |
+| TotRmsAbvGrd  |    1459 |    6.385 |    1.509 |     3 |    5    |    6   |     7    |    15 |
+| Functional    |    1459 |    4.903 |    0.4   |     1 |    5    |    5   |     5    |     5 |
+| Fireplaces    |    1459 |    0.581 |    0.647 |     0 |    0    |    0   |     1    |     4 |
+| FireplaceQu   |    1459 |    1.711 |    1.801 |     0 |    0    |    0   |     4    |     5 |
+| GarageYrBlt   |    1381 | 1977.72  |   26.431 |  1895 | 1959    | 1979   |  2002    |  2207 |
+| GarageCars    |    1458 |    1.766 |    0.776 |     0 |    1    |    2   |     2    |     5 |
+| GarageArea    |    1458 |  472.769 |  217.049 |     0 |  318    |  480   |   576    |  1488 |
+| GarageQual    |    1459 |    2.792 |    0.709 |     0 |    3    |    3   |     3    |     4 |
+| GarageCond    |    1459 |    2.809 |    0.705 |     0 |    3    |    3   |     3    |     5 |
+| WoodDeckSF    |    1459 |   93.175 |  127.745 |     0 |    0    |    0   |   168    |  1424 |
+| OpenPorchSF   |    1459 |   48.314 |   68.883 |     0 |    0    |   28   |    72    |   742 |
+| EnclosedPorch |    1459 |   24.243 |   67.228 |     0 |    0    |    0   |     0    |  1012 |
+| 3SsnPorch     |    1459 |    1.794 |   20.208 |     0 |    0    |    0   |     0    |   360 |
+| ScreenPorch   |    1459 |   17.064 |   56.61  |     0 |    0    |    0   |     0    |   576 |
+| PoolArea      |    1459 |    1.744 |   30.492 |     0 |    0    |    0   |     0    |   800 |
+| MiscVal       |    1459 |   58.168 |  630.807 |     0 |    0    |    0   |     0    | 17000 |
+| MoSold        |    1459 |    6.104 |    2.722 |     1 |    4    |    6   |     8    |    12 |
+| YrSold        |    1459 | 2007.77  |    1.302 |  2006 | 2007    | 2008   |  2009    |  2010 |
+
+</details>
+
+The years in *GarageYrBlt*, *YearRemodAdd* and *YrSold* were fixed so they make sense together (for example, a house can't be sold before it was built).
+
+#### A.3.2 Replace NA
+
+> **In this section** we fill the missing values of the numeric variables with zero, because in all of them the gap means that the house does not have that element (no lot frontage, no masonry veneer, no basement, no garage).
+
+#### A.3.3 Rename variable
+
+Variables whose name starts with a number were renamed (*1stFlrSF* to *FstFlrSF*, *2ndFlrSF* to *SndFlrSF* and *3SsnPorch* to *ThrSsnPorch*), because a name that starts with a number cannot be used directly in formulas.
+
+#### A.3.4 Variables creations
+
+> **In this section** we add the three porch areas into a single *EnclosedPorch* variable and drop the other two, and we build an auxiliary flag that marks the houses that have a garage (it is only used for the checks of the next section, it is not a variable of the model).
+
+The enclosed porch, three-season porch and screen porch areas (in square feet) were added up into one variable, because they are basically the same thing: an enclosed porch.
+
+#### A.3.5 Drop variables
+
+> **In this section** we check the reasons to drop six variables and then drop them: how many houses have miscellaneous worth more than 1,000 USD, how many have low quality finished area, how strongly the year the garage was built follows the year the house was built, and whether the basement areas add up exactly to the total basement area. The sum matches in the 1,459 houses, so *TotalBsmtSF* carries no extra information.
+
+- **PoolArea**: almost no house in the data has a pool.
+- **TotalBsmtSF**: it is just the sum of the other basement areas.
+- **GarageYrBlt**: it almost always matches *YearBuilt* (the garage is built with the house), and it has missing values.
+- **MSSubClass**: it is a mix of *HouseStyle* and *YearBuilt*, so it repeats information.
+- **MiscVal**: only a few houses have extras (miscellaneous features) worth more than 1,000 USD, which is tiny next to an average price of about 175,000 USD. Also, this value is part of the price itself, so using it would be like knowing part of the answer in advance. And most houses have no extras at all.
+- **LowQualFinSF**: only 14 houses have a value above zero.
+
+<details>
+<summary>Output (houses with miscellaneous value above 1,000 USD, and houses with low quality finished area) (click to open)</summary>
+
+```text
+MiscVal            LowQualFinSF
+1500     3         only 14 houses have a value above zero
+2000     3         (140, 697, 312, 436, 114, 80, 431,
+3000     2          205, 108, 362, 1064, 259, 450, 512
+4500     2          square feet, one house each)
+2500     1
+17000    1
+12500    1
+1512     1
+6500     1
+1200     1
+```
+
+</details>
+
+**Output (correlation between the year the house was built and the year the garage was built):**
+
+```text
+             YearBuilt  GarageYrBlt
+YearBuilt     1.000000     0.862234
+GarageYrBlt   0.862234     1.000000
+```
+
+#### A.3.6 Replace values
+
+> **In this section** we deal with unusual values and with outliers (values much bigger than the rest, which pull the model towards them). The very rare values are brought back to a normal level: the two houses with 2 half bathrooms in the basement are set to 1, the house with 3 full bathrooms in the basement is set to 2, and the two houses with no kitchen are set to 1. Then outliers are detected with the interquartile rule (a value is an outlier when it falls more than 1.5 interquartile ranges below the first quartile or above the third one), the distribution of the affected variables is plotted, and a cut-off point is read from each plot: everything above it is truncated to the cut-off. Finally we check whether a house says it has something (a basement, a fireplace) while its size is zero or the other way around: only one house was inconsistent (a basement with living quarters of zero square feet) and its basement type was set to unfinished.
+
+Unusual values, values that don't make sense, and outliers were checked and replaced.
+
+<details>
+<summary>Output (variables with outliers, with the lower and upper limits of the interquartile rule) (click to open)</summary>
+
+|               |   Outliers |   inferior |   superior |   Maximum |
+|:--------------|-----------:|-----------:|-----------:|----------:|
+| LotFrontage   |       15.0 |      -7.00 |     129.00 |     200.0 |
+| LotArea       |       60.0 |    1201.25 |   17707.25 |   56600.0 |
+| MasVnrArea    |      104.0 |    -243.00 |     405.00 |    1290.0 |
+| BsmtFinSF1    |        8.0 |   -1128.00 |    1880.00 |    4010.0 |
+| BsmtFinSF2    |      180.0 |       0.00 |       0.00 |    1526.0 |
+| BsmtUnfSF     |       26.0 |    -648.75 |    1665.25 |    2140.0 |
+| FstFlrSF      |       23.0 |     110.00 |    2146.00 |    5095.0 |
+| SndFlrSF      |        5.0 |   -1014.00 |    1690.00 |    1862.0 |
+| GrLivArea     |       44.0 |     212.25 |    2626.25 |    5095.0 |
+| TotRmsAbvGrd  |       21.0 |       2.00 |      10.00 |      15.0 |
+| GarageArea    |       21.0 |     -70.25 |     963.75 |    1488.0 |
+| WoodDeckSF    |       35.0 |    -252.00 |     420.00 |    1424.0 |
+| OpenPorchSF   |       79.0 |    -108.00 |     180.00 |     742.0 |
+| EnclosedPorch |      290.0 |     -60.75 |     101.25 |    1012.0 |
+
+</details>
+
+The outlier check says these variables need a closer look, to cap their extreme values and get a more robust model (one that a few big values can't pull around):
+
+- LotArea
+- MasVnrArea
+- FstFlrSF
+- BsmtFinSF1
+- GrLivArea
+- WoodDeckSF
+- OpenPorchSF
+
+![Lot area distribution](plots/plot1_lot_area_distribution.png)
+
+![Masonry veneer area distribution](plots/plot2_masonry_veneer_area_distribution.png)
+
+![First floor square feet distribution](plots/plot3_first_floor_sf_distribution.png)
+
+![Above grade living area distribution](plots/plot4_above_grade_living_area_distribution.png)
+
+![Wood deck area distribution](plots/plot5_wood_deck_area_distribution.png)
+
+![Open porch area distribution](plots/plot6_open_porch_area_distribution.png)
+
+From the previous charts we determine the cut-off points from which the data will be truncated: 30,000 square feet for *LotArea*, 600 for *MasVnrArea*, 3,000 for *FstFlrSF*, 3,000 for *GrLivArea*, 600 for *WoodDeckSF* and 300 for *OpenPorchSF*.
+
+We also check for houses that say they have something (like a basement) but its size is 0, or the other way around. The pairs checked are:
+
+- no basement and BsmtFinSF1
+- no basement and BsmtFinSF2
+- no basement and BsmtUnfSF
+- Fireplaces and FireplaceQu
+
+## Appendix B: Average sale price by category
+
+> **In this section** we show, for each categorical variable, the average sale price in USD and the number of houses of each category, with a one-line reading of each table.
+
+<details>
+<summary>Output (summary of the categorical variables that reach this point) (click to open)</summary>
 
 | Variable      |   count |   unique | top      |   freq |
 |:--------------|--------:|---------:|:---------|-------:|
@@ -617,6 +962,8 @@ For these other variables the relationship does make some sense, so they were ke
 | MiscFeature   |    1459 |        2 | No       |   1413 |
 | SaleType      |    1459 |        4 | Warranty |   1271 |
 | SaleCondition |    1459 |        4 | Normal   |   1204 |
+
+</details>
 
 **Output (average sale price in USD by zoning classification):**
 
@@ -652,17 +999,6 @@ Houses on low ground (a depression) are worth more than those on other land cont
 | Inside    | 178239.0 |    1081 |
 
 Houses on a cul-de-sac (a dead-end street) are worth about 8,000 USD more.
-
-Neighbourhoods were grouped into 4 socioeconomic levels, based on their house prices:
-
-- Rich
-- Medium-rich
-- Medium-poor
-- Poor
-
-![Sale price by neighbourhood](plots/plot13_sale_price_by_neighbourhood.png)
-
-*The bars are the average sale price in USD of each neighbourhood, coloured by socioeconomic level. The horizontal axis label on the chart is wrong: it shows the average price, not a correlation.*
 
 **Output (average sale price in USD by proximity to main road or railroad):**
 
@@ -795,339 +1131,11 @@ Houses with a shed are worth more.
 
 New houses sold for more, and houses sold by contract sold for less.
 
-## 4. Regression analysis
-
-### 4.1 Basic preprocessing
-
-> **In this section** we prepare the data for the model: every remaining text variable becomes a set of 0/1 columns (one per category, dropping the first one so there is no redundancy), the data is split into training and test sets (80% / 20%), the seven most expensive houses of the training set are removed, and all the columns are standardized (each value minus the average, divided by the standard deviation) so that variables measured in different units weigh the same.
-
-The data was split into two separate groups (no house is in both):
-
-- **Train**: the houses the model learns from.
-- **Test**: houses kept aside to check how well the model works on houses it has never seen.
-
-![QQ plot of the training set before removing the atypical houses](plots/plot14_qqplot_train_before.png)
-
-Atypical houses (sale price above 245,000 USD) were removed from the training set.
-
-**Output (ten most expensive houses of the training set):**
-
-| Id   |   SalePrice |
-|:-----|------------:|
-| 2189 |  281643.98 |
-| 2251 |  280618.13 |
-| 2264 |  277936.13 |
-| 2797 |  259423.86 |
-| 1948 |  255629.49 |
-| 2265 |  249768.28 |
-| 2901 |  245283.20 |
-| 2823 |  235419.37 |
-| 2600 |  234707.21 |
-| 2754 |  234492.25 |
-
-![QQ plot of the training set after removing the atypical houses](plots/plot15_qqplot_train_after.png)
-
-The sale price now looks much closer to a **normal distribution** than before.
-
-### 4.2 Baseline
-
-> **In this section** we build the baseline, the simplest possible prediction: giving every house of the test set the average price of the training set. Any model has to beat this. The errors are the Mean Absolute Error (the average size of the mistake, in USD), the Mean Squared Error (the average of the squared mistakes, which punishes the big ones) and its square root.
-
-To know if a model is good, we compare it with a baseline: a very simple prediction that any useful model must beat. Here the baseline gives every house the average price of the training set.
-
-**Output (baseline):**
-
-```text
-Base: 178777.25
-Mean Absolute Error: 12817.26
-Mean Squared Error: 280169188.19
-Root Mean Squared Error: 16738.26
-```
-
-### 4.3 Linear regression techniques
-
-1. **Simple Linear Regression**: finds the formula that makes the RSS (Residual Sum of Squares: the sum of the squared mistakes) as small as possible.
-2. **Ridge Regression**: the same, plus a penalty for big weights (the sum of the squared coefficients). This keeps the coefficients small.
-3. **Lasso Regression**: the same idea, but the penalty is the sum of the absolute values of the coefficients. This can push some coefficients to exactly zero, which removes those variables.
-
-Ridge and lasso punish a model that leans on too many variables. That helps avoid overfitting (great results on the training data, poor results on new data), so these two are the ones used here.
-
-#### 4.3.1 Ridge regression
-
-> **In this section** we search the best penalty strength (alpha) for the ridge regression with a grid search and 5 fold cross validation (the training data is split in five parts, the model is trained five times and each part is used once to check it), and then we measure the errors in the test set and in the training set.
-
-**Output (ridge regression, test set):**
-
-```text
-Mean Absolute Error: 1210.08
-Mean Squared Error: 4075012.77
-Root Mean Squared Error: 2018.67
-```
-
-**Output (ridge regression, training set):**
-
-```text
-Mean Absolute Error: 956.54
-Mean Squared Error: 1659589.63
-Root Mean Squared Error: 1288.25
-```
-
-**Output (best parameters):**
-
-```text
-{'alpha': 1.83, 'fit_intercept': True}
-```
-
-#### 4.3.2 Lasso regression
-
-> **In this section** we repeat the same search for the lasso regression, with 3 fold cross validation, and we also compute the ratio between the test error and the training error, which shows how much the model gets worse on data it has never seen.
-
-**Output (lasso regression, test set):**
-
-```text
-Mean Absolute Error: 1157.62
-Mean Squared Error: 3870212.04
-Root Mean Squared Error: 1967.29
-```
-
-**Output (lasso regression, training set):**
-
-```text
-Mean Absolute Error: 988.48
-Mean Squared Error: 1857951.53
-Root Mean Squared Error: 1363.07
-```
-
-**Output (best parameters):**
-
-```text
-{'alpha': 60.804020100502505, 'fit_intercept': True}
-```
-
-Lasso has the smallest error on the test set (houses the model never saw), and the smallest gap between its training and test errors. A small gap means less overfitting: the model learned general patterns instead of memorizing the training houses. So lasso was chosen for this data.
-
-| Result in test set | Ridge | Lasso |
-|--|--|--|
-| Mean Absolute Error | 1210 | **1157** |
-| Root Mean Squared Error | 2018 | **1967** |
-
-Another plus of lasso: when a variable barely helps, lasso sets its coefficient (its weight in the formula) to zero, which removes it from the model and keeps the model simple.
-
-**Output (ratio between test and training results):**
-
-```text
-Mean Absolute Error: 1.17
-Root Mean Squared Error: 1.44
-```
-
-On the test set, the Mean Absolute Error (MAE) is 17% worse than on the training set. The Root Mean Squared Error (RMSE) is 44% worse, but the RMSE is more sensitive to a few big mistakes (outliers).
-
-**Output (variables kept by the lasso, with their coefficients):**
-
-| Columns              |   coefficients |
-|:---------------------|---------------:|
-| LotFrontage          |      28.472497 |
-| LotArea              |    7981.662150 |
-| ExterQual            |     -31.131587 |
-| ExterCond            |     -11.313681 |
-| BsmtCond             |     -30.046489 |
-| BsmtFullBath         |     -32.388232 |
-| BedroomAbvGr         |   10619.207556 |
-| TotRmsAbvGrd         |      95.363553 |
-| FireplaceQu          |     -19.813525 |
-| MoSold               |    3071.143628 |
-| Neighborhood_Mitchel |      14.519903 |
-| BldgType_Twnhs       |       6.451782 |
-| Exterior2nd_VinylSd  |      -6.231214 |
-| MasVnrType_Stone     |     -12.136795 |
-| Foundation_CBlock    |      10.754260 |
-| BsmtFinType1_GLQ     |     -17.273508 |
-| GarageType_Other     |      81.688189 |
-| GarageFinish_RFn     |      33.069807 |
-| SaleType_Contract    |     -60.013675 |
-| SaleType_New         |     130.817815 |
-
-Some variables were deleted because their effect in the model was not the expected one (it made no sense):
-
-- BsmtCond
-- ExterQual
-- ExterCond
-- FireplaceQu
-- BsmtFinType1_GLQ
-- GarageFinish_RFn
-
-> **Looking back:** deleting a variable because its sign "makes no sense" is risky (the same goes for *Functional* and *OverallCond* in section 3.3). An unexpected sign often shows up when two variables carry the same information and the model splits the effect between them, or it can be a real effect we did not expect. A safer way is to check first how correlated those variables are, and then keep or drop them based on the error on the test set, not on the sign.
-
-#### 4.3.3 Lasso regression - version 2
-
-> **In this section** we train the lasso again with only the variables that behave as expected. *TotRmsAbvGrd* is also dropped because it is highly correlated with *BedroomAbvGr*, and the VIF (variance inflation factor, a number that says how much a variable can be explained by the others: above 10 means trouble) confirms that the remaining 13 variables are not redundant. The whole preparation is repeated with this reduced set (split, removal of the seven most expensive houses, standardization) and the errors are measured again.
-
-**Output (first rows of the reduced set of variables):**
-
-|   Id |   LotFrontage |   LotArea |   BsmtFullBath |   BedroomAbvGr |   TotRmsAbvGrd |   MoSold |   Neighborhood_Mitchel |   BldgType_Twnhs |   Exterior2nd_VinylSd |   MasVnrType_Stone |   Foundation_CBlock |   GarageType_Other |   SaleType_Contract |   SaleType_New |
-|-----:|--------------:|----------:|---------------:|---------------:|---------------:|---------:|-----------------------:|-----------------:|----------------------:|-------------------:|--------------------:|-------------------:|--------------------:|---------------:|
-| 1461 |            80 |     11622 |              0 |              2 |              5 |        6 |                      0 |                0 |                     1 |                  0 |                   1 |                  0 |                   0 |              0 |
-| 1462 |            81 |     14267 |              0 |              3 |              6 |        6 |                      0 |                0 |                     0 |                  0 |                   1 |                  0 |                   0 |              0 |
-| 1463 |            74 |     13830 |              0 |              3 |              6 |        3 |                      0 |                0 |                     1 |                  0 |                   0 |                  0 |                   0 |              0 |
-| 1464 |            78 |      9978 |              0 |              3 |              7 |        6 |                      0 |                0 |                     1 |                  0 |                   0 |                  0 |                   0 |              0 |
-| 1465 |            43 |      5005 |              0 |              2 |              5 |        1 |                      0 |                0 |                     0 |                  0 |                   0 |                  0 |                   0 |              0 |
-
-![Correlation plot of the variables of the final model](plots/plot16_correlation_plot_final_model_vars.png)
-
-*BedroomAbvGr* and *TotRmsAbvGrd* are highly correlated, and *Exterior2nd_VinylSd* and *Foundation_CBlock* moderately so; the rest have low correlations. So *TotRmsAbvGrd* was deleted, and there is little or no **multicollinearity** left (variables repeating each other's information).
-
-The VIF values confirm it: they are all below 10 (above 10 would signal a problem).
-
-**Output (VIF of the 13 variables of the model):**
-
-```text
-LotFrontage           4.48    MasVnrType_Stone     1.18
-LotArea               7.21    Foundation_CBlock    2.08
-BsmtFullBath          1.69    GarageType_Other     1.04
-BedroomAbvGr          8.86    SaleType_Contract    1.03
-MoSold                5.22    SaleType_New         1.27
-Neighborhood_Mitchel  1.08
-BldgType_Twnhs        1.16
-Exterior2nd_VinylSd   1.92
-```
-
-**Output (lasso version 2, test set):**
-
-```text
-Mean Absolute Error: 1162.47
-Mean Squared Error: 3901580.90
-Root Mean Squared Error: 1975.24
-```
-
-**Output (best parameters):**
-
-```text
-{'alpha': 34.67336683417085, 'fit_intercept': True}
-```
-
-> **In this section** we also check the two assumptions of the linear regression: that the residuals (the difference between the predicted price and the real price) have mean zero, and that they do not grow with the price of the house (heteroscedasticity).
-
-The residuals (real price minus predicted price) have a mean of zero.
-
-There is no heteroscedasticity: the size of the mistakes does not grow with the price of the house.
-
-![Relation between house price and residuals](plots/plot17_price_vs_residuals.png)
-
-*The horizontal axis is the real sale price in USD of the training houses and the vertical axis is the residual in USD.*
-
-**Output (coefficients of the final model, on standardized data):**
-
-| Columns              |   coefficients |
-|:---------------------|---------------:|
-| LotFrontage          |      74.062884 |
-| LotArea              |    8034.763189 |
-| BsmtFullBath         |     -78.691169 |
-| BedroomAbvGr         |   10709.981605 |
-| MoSold               |    3095.407213 |
-| Neighborhood_Mitchel |      49.795227 |
-| BldgType_Twnhs       |      65.610204 |
-| Exterior2nd_VinylSd  |     -55.512537 |
-| MasVnrType_Stone     |     -54.946391 |
-| Foundation_CBlock    |      17.273763 |
-| GarageType_Other     |     119.616335 |
-| SaleType_Contract    |     -98.123995 |
-| SaleType_New         |     182.917556 |
-
-Now every coefficient goes in a direction that makes sense, and the model meets the assumptions of linear regression, so we can draw conclusions from it.
-
-First, the model beats the baseline (giving every house the average price) by far. Its Mean Absolute Error (MAE) is 1,162 USD: on average it misses a house's price by 1,162 USD, against 12,817 USD for the baseline. With an average price of 178,777 USD, that is a very good estimate.
-
-Second, the factors that influence the sale price of a house are:
-
-- **LotFrontage**: Linear feet of street connected to property
-- **LotArea**: Lot size in square feet
-- **BsmtFullBath**: Basement full bathrooms
-- **BedroomAbvGr**: Number of bedrooms above basement level
-- **MoSold**: Month Sold
-- **Neighborhood**: Physical locations
-- **BldgType**: Type of dwelling
-- **Exterior2nd**: Exterior covering on house (if more than one material)
-- **MasVnrType**: Masonry veneer type
-- **Foundation**: Type of foundation
-- **GarageType**: Garage location
-- **SaleType**: Type of sale
-
-The data was standardized (each column divided by its standard deviation), so the coefficients are measured in "standard deviations". To read them in real units (USD per square foot, per bedroom...), each coefficient is divided by its variable's standard deviation.
-
-**Output (coefficients brought back to their real unit):**
-
-| Columns              |   coefficients |   standard_deviation |   coefficients_unit |
-|:---------------------|---------------:|---------------------:|--------------------:|
-| LotFrontage          |      74.062884 |            32.266054 |            2.295381 |
-| LotArea              |    8034.763189 |          4285.465336 |            1.874887 |
-| BsmtFullBath         |     -78.691169 |             0.527849 |         -149.078979 |
-| BedroomAbvGr         |   10709.981605 |             0.829788 |        12906.883352 |
-| MoSold               |    3095.407213 |             2.722432 |         1137.000786 |
-| Neighborhood_Mitchel |      49.795227 |             0.206387 |          241.271518 |
-| BldgType_Twnhs       |      65.610204 |             0.187165 |          350.547764 |
-| Exterior2nd_VinylSd  |     -55.512537 |             0.476993 |         -116.380251 |
-| MasVnrType_Stone     |     -54.946391 |             0.275876 |         -199.170419 |
-| Foundation_CBlock    |      17.273763 |             0.492351 |           35.084273 |
-| GarageType_Other     |     119.616335 |             0.163348 |          732.277529 |
-| SaleType_Contract    |     -98.123995 |             0.134818 |         -727.827126 |
-| SaleType_New         |     182.917556 |             0.271683 |          673.275188 |
-
-How to read each coefficient ($\beta_{k}$): it is how much the price changes when that variable goes up by one unit, **while all the other variables stay the same**:
-
-- **LotFrontage**: each extra foot of street touching the property adds 2.29 USD to the price.
-- **LotArea**: each extra square foot of land adds 1.87 USD.
-- **BsmtFullBath**: each full bathroom in the basement lowers the price by 149.08 USD. A possible reason: a house with more bathrooms in the basement has fewer in the rest of the house, and a basement bathroom is less comfortable.
-- **BedroomAbvGr**: each extra bedroom above the basement adds 12,906.88 USD.
-- **Neighborhood**: a house in Mitchel is worth 241.27 USD more than in the other neighbourhoods.
-- **BldgType**: a townhouse is worth 350.55 USD more than other types of dwelling.
-- **Exterior2nd**: if the second exterior covering (when there is more than one material) is vinyl siding, the price drops by 116.38 USD compared with other coverings.
-- **MasVnrType**: a stone masonry veneer (a decorative stone layer on the walls) lowers the price by 199.17 USD compared with other types.
-- **Foundation**: a cinder block foundation adds 35.08 USD compared with other foundations.
-- **GarageType**: a garage in the basement, a car port, or more than one type of garage adds 732.28 USD.
-- **SaleType**: a sale by contract lowers the price by 727.83 USD, and a brand-new house adds 673.28 USD (both compared with warranty, court and other sales).
-- **MoSold**: for each month later in the year (January = 1 to December = 12), the price goes up by 1,137 USD on average. Prices follow supply and demand, so months with more buyers bring higher prices.
-
-The model meets the main assumptions of linear regression.
-
-### 4.4 Other regression techniques
-
-#### 4.4.1 Random forest regressor
-
-> **In this section** we try a random forest (many decision trees whose predictions are averaged) on the same 13 variables, searching 500 random combinations of its settings.
-
-**Output (random forest, test set):**
-
-```text
-Mean Absolute Error: 1788.23
-Mean Squared Error: 9477577.89
-Root Mean Squared Error: 3078.57
-```
-
-**Output (best parameters):**
-
-```text
-{'max_depth': 9, 'max_leaf_nodes': 59, 'n_estimators': 350}
-```
-
-#### 4.4.2 XGBoost
-
-> **In this section** we try a gradient boosting model (trees built one after another, each one correcting the mistakes of the previous ones), also with 500 random combinations of its settings.
-
-**Output (XGBoost, test set):**
-
-```text
-Mean Absolute Error: 1417.46
-Mean Squared Error: 6512115.98
-Root Mean Squared Error: 2551.88
-```
-
-Other models (Random Forest and XGBoost) were also tested, but they did worse than lasso.
-
-## Appendix: Python code
+## Appendix C: Python code
 
 The code below is the same as in [`analysis.py`](analysis.py), grouped by the sections of this report. The only difference: here the file paths still point to the original Google Drive folder, while `analysis.py` reads from `data/`. The two lines that only work in Google Colab are commented out.
 
-### A.1 Introduction
+### C.1 Introduction
 
 ```python
 """House price regression analysis.
@@ -1178,7 +1186,7 @@ from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 # drive.mount('/content/gdrive')
 ```
 
-### A.2 Data management
+### C.2 Data management
 
 ```python
 # %% Read the two sheets of the Excel file
@@ -1599,7 +1607,7 @@ print(X[X.FireplaceQu == 0].Fireplaces.value_counts())
 X.loc[(X.BsmtFinSF2 == 0) & (X.BsmtFinType2 == 'LQ'), 'BsmtFinType2'] = 'Unf'
 ```
 
-### A.3 Descriptive analysis
+### C.3 Descriptive analysis
 
 ```python
 # %% How the sale price is distributed
@@ -1865,7 +1873,7 @@ print('Sale Price in dollars:')
 print(round(Xy.groupby(['SaleType'])['SalePrice'].agg(['mean', 'count']), 0).sort_values(by='mean', ascending=False))
 ```
 
-### A.4 Regression analysis
+### C.4 Regression analysis
 
 ```python
 # %% Turn the text variables into 0/1 columns

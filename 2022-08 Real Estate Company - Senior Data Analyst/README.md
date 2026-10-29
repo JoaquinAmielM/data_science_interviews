@@ -96,7 +96,7 @@ Finally, most of the company's reviews on Trustpilot complain that the home does
 
 ## 0. Import libraries and data
 
-> **In this section** we imported the libraries (pandas, numpy, matplotlib, seaborn, geopandas and shapely), mounted Google Drive (the notebook was run in Google Colab) and read three files: the listings table (10,000 rows and 13 columns), a table of Italian cities with their population and position (3,373 rows and 9 columns; public data from https://simplemaps.com/data/it-cities) and a shapefile with the map of Italy (`stanford-mn871sp9778-shapefile.zip`). The first rows of the two tables are shown below.
+> **In this section** we imported the libraries (pandas, numpy, matplotlib, seaborn, geopandas and shapely), mounted Google Drive (the code was first run in Google Colab) and read three files: the listings table (10,000 rows and 13 columns), a table of Italian cities with their population and position (3,373 rows and 9 columns; public data from https://simplemaps.com/data/it-cities) and a shapefile with the map of Italy (`stanford-mn871sp9778-shapefile.zip`). The first rows of the two tables are shown below.
 
 **Output (listings table):**
 
@@ -136,7 +136,8 @@ The cleaning steps:
 - Delete the 49 listings priced at 10 euros or less per month. They deserve a closer look (it could be a price per day, or a trick to avoid paying commissions), but here they are removed.
 - Sizes below 5 square meters are clearly wrong, so they are set to missing (NA).
 
-**Output (data types):**
+<details>
+<summary>Output (data types) (click to open)</summary>
 
 ```text
 city                             object
@@ -154,6 +155,8 @@ garden                           object
 terrace                          object
 dtype: object
 ```
+
+</details>
 
 Most text columns have only 2 or 3 values (yes/no/shared), and many are mostly empty: for example, we only know for 1,388 listings whether there is a balcony. The company should encourage landlords to fill in these fields, for example by suggesting answers from the photos they upload (a photo of a balcony means the place probably has one).
 
@@ -260,7 +263,8 @@ In the 4 cities with the most listings:
 
 > **In this section** we repeated the same steps using only the apartments. Here `penetration_per_100thousand_plot` is the penetration multiplied by 10 and then limited to between 50 and 1,000, and the color scale goes from 600 to 2,000 euros. The whole city table is shown below, followed by the map.
 
-**Output (city table, apartments):**
+<details>
+<summary>Output (city table, apartments) (click to open)</summary>
 
 |  | city | price | properties | lat | lng | country | iso2 | admin_name | capital | population | population_proper | penetration_per_100thousand | geometry | penetration_per_100thousand_plot |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -288,6 +292,8 @@ In the 4 cities with the most listings:
 | 22 | Venice | 3337.134444 | 9 | 45.4397 | 12.3319 | Italy | IT | Veneto | admin | 261321.0 | 261321.0 | 3.444040 | POINT (12.33190 45.43970) | 50.000000 |
 | 23 | Verona | 1273.913043 | 23 | 45.4386 | 10.9928 | Italy | IT | Veneto | minor | 257275.0 | 257275.0 | 8.939850 | POINT (10.99280 45.43860) | 89.398504 |
 
+</details>
+
 ![Geographical distribution - Penetration Apartments](plots/plot9_map_penetration_apartments.png)
 
 *Each dot is a city: its size is the penetration of apartments (properties per 100,000 inhabitants, multiplied by 10) and its color is the average monthly price of apartments in euros (scale from 600 to 2,000).*
@@ -300,7 +306,8 @@ In the 4 cities with the most listings:
 
 *Each dot is a city: its size is the penetration of rooms (properties per 100,000 inhabitants) and its color is the average monthly price of rooms in euros (scale from 250 to 500).*
 
-**Output (city table, rooms):**
+<details>
+<summary>Output (city table, rooms) (click to open)</summary>
 
 |  | city | price | properties | lat | lng | country | iso2 | admin_name | capital | population | population_proper | penetration_per_100thousand | geometry | penetration_per_100thousand_plot |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -334,6 +341,8 @@ In the 4 cities with the most listings:
 | 28 | Venice | 398.773333 | 75 | 45.4397 | 12.3319 | Italy | IT | Veneto | admin | 261321.0 | 261321.0 | 28.700334 | POINT (12.33190 45.43970) | 50.000000 |
 | 29 | Verona | 419.913043 | 23 | 45.4386 | 10.9928 | Italy | IT | Veneto | minor | 257275.0 | 257275.0 | 8.939850 | POINT (10.99280 45.43860) | 50.000000 |
 
+</details>
+
 ## 6. Cities of interest: conclusions
 
 > **In this section** we read the three city tables and maps together, to decide which cities to focus on. Penetration = listings per 100,000 inhabitants.
@@ -343,6 +352,15 @@ In the 4 cities with the most listings:
 - **Big cities with room to grow:** Rome has the most people (2.9 million) but only about 14 room listings per 100,000 inhabitants, against 98 in Milan. Naples (about 6) and Turin (about 51) are in the same situation. Rome also has the most expensive apartments (2,206 euros a month on average), and since the commission is 25% of the first month's rent, each apartment rented there brings more money. **Rome is the main city of interest**, followed by Naples and Turin.
 - **Apartments** are concentrated in Milan (572) and Florence (470), with Rome far behind (125) despite being the biggest city.
 - **Not enough data:** the very high apartment prices in Venice (3,337 euros) and Padova (2,123 euros) come from only 9 and 16 listings, so they are not reliable.
+
+## 7. Limitations
+
+> **In this section** we list what I would do differently today.
+
+- **The KPIs could not be measured**: the data only has listings, not visits, sign-ups or contracts. With that data, the next step would be to calculate the three KPIs per city and per channel.
+- **The overall average price mixes categories**: when cheap private rooms disappear, the average goes up even if no price changes. The charts per category are the reliable ones for price trends.
+- **Penetration uses the whole population of each city**, but most tenants are students and young professionals. Using the number of university students would show the real size of each market better.
+- **Many features are mostly empty** (balcony, garden, terrace...), so they could not be used in the analysis.
 
 ## Appendix: Python code
 

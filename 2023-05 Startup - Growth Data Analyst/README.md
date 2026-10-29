@@ -6,8 +6,8 @@ Joaquin Amiel Marcora - 2023-04-23
 >
 > - **Role:** Growth Data Analyst (May 2023)
 > - **Question:** do people walk more after installing a step-counting app?
-> - **What I did:** compared each user's steps before and after the install with a paired t-test and a Bayesian A/B test (two ways to check that a change is real and not luck).
-> - **Result:** yes. People walk 414 more steps a day on average, with 99.996% probability. The Android data was weak: only 161 of 1,344 Android users had steps both before and after.
+> - **What I did:** compared each user's steps before and after the install with a paired t-test and a Bayesian A/B test (two ways to check that a change is real and not luck). Then I checked that result with a placebo test and with a control group: users who installed the app one week later, compared on the same calendar days.
+> - **Result:** people walk 414 more steps a day after installing the app (99.996% probability), **but the app is not the cause**. Their steps were already going up before the install, and on the same days, users who didn't have the app yet went up even more. The increase comes from the season (installs from January to April) and from users who were already becoming more active. If the app has an effect, it is at most around 100 steps a day.
 
 ## 0. Problem statement
 
@@ -244,6 +244,67 @@ Writing a Bayesian A/B test from scratch is slow and error-prone, especially in 
 | Before app installation event - Android | 158 | 1846.165667 | 0.0 | 318.895653 |
 | After app installation event - Android | 158 | 3699.386238 | 1.0 | 0.000000 |
 
+### 4.3 Robustness check: were steps already going up?
+
+> **In this section** we run a placebo test: we pretend the app was installed one week earlier and compare week -2 (days -14 to -8) with week -1 (days -7 to -1). Nothing happened between those two weeks, so any "effect" found there is a trend, not the app. Then we check if the jump when the app arrives (week -1 to week +1) is bigger than that trend. Only the 1,700 users with data in the three weeks are used, so every user is compared with themselves.
+
+The "Steps per day" chart in section 3 shows steps slowly going up even before the install. If that is true, part of the increase measured in 4.1 and 4.2 could just be that trend.
+
+**Output (average steps per day of the same 1,700 users):**
+
+| Week | Days | App installed? | Average steps per day |
+|---|---|---|---:|
+| week -2 | -14 to -8 | no | 4,838 |
+| week -1 | -7 to -1 | no | 5,109 |
+| week +1 | 0 to 6 | yes | 5,291 |
+
+**Output (tests):**
+
+```text
+Placebo (week -1 vs week -2): t=5.2518, p_value=0.0
+Average change in steps per day, week -2 -> week -1 (no app): 271
+Average change in steps per day, week -1 -> week +1 (app):    181
+Jump vs trend: t=-1.0056, p_value=0.8426
+```
+
+Users were already walking more each week **before** installing the app: from week -2 to week -1 their steps went up by 271 per day, and the placebo test says this rise is real (p-value below 0.01), even though nothing happened between those two weeks. When the app arrives (week -1 to week +1), steps go up by 181 per day: **not more** than the rise that was already happening (p-value = 0.84).
+
+So the tests in 4.1 and 4.2 are right that users walk more after installing the app, but this check shows that the increase could be a trend that started before. For example, people often install a fitness app right when they have decided to move more. Section 4.4 looks for the cause of that trend.
+
+### 4.4 Control group: users who installed the app one week later
+
+> **In this section** we compare two groups of users on the **same calendar days**. The "treated" users installed the app on day D: in the week before D they don't have it, and in the week from D on they do. The "control" users installed it exactly 7 days later (D + 7): in those same two weeks they still don't have the app. Both groups live the same weather and the same season, so the difference between their changes is the effect of the app (this is called a "difference in differences"). We match 91 install days, with 1,619 treated and 1,591 control users. To know how sure we can be, we repeat the calculation on 2,000 random re-samples of the users (a bootstrap).
+
+Why was there a trend before the install? The installs go from January to April 2021, so one possible reason is the season: people walk more as spring arrives. Another is the users themselves, who may have started moving more right before installing the app.
+
+**Output (change in steps per day, on the same calendar days):**
+
+| Group | Week 1 → week 2 | Change in steps per day |
+|---|---|---:|
+| Treated (installed on day D) | no app → app | +190 |
+| Control (installed on day D + 7) | no app → no app | +285 |
+| **Difference (effect of the app)** | | **-95** |
+
+```text
+95% interval of the difference: [-274.  100.]
+Share of samples where the app adds steps: 0.166
+```
+
+**Output (average steps per day around the install, by month of install):**
+
+| Month of install | Week -2 | Week -1 | Week +1 |
+|---|---:|---:|---:|
+| January | 4,077 | 4,163 | 4,261 |
+| February | 4,337 | 4,683 | 4,980 |
+| March | 5,232 | 5,563 | 5,777 |
+| April | 5,262 | 5,479 | 5,522 |
+
+On the same days, the users who **didn't have the app yet went up more** (+285 steps per day) than the users who had just installed it (+190). The difference is -95 steps per day, and the 95% interval goes from -274 to +100: it includes zero, and only 17% of the re-samples show the app adding steps. So **this data shows no effect of the app**. At most, the app could add around 100 steps per day, which this data can't rule out.
+
+The second table points to the season: at the same stage (for example, week -2), users who installed in March or April walk about 25% more than users who installed in January. And the steps grow fastest in February and March, as the weather gets better.
+
+This comparison assumes that, without the app, the treated users would have changed like the control users did in the same days.
+
 ## 5. Conclusions and future steps
 
 Users walk more after installing the startupCompany app, with a probability of 99.996%: on average, about 414 more steps per day. That is roughly 120-145 extra calories per week (a step burns about 0.04-0.05 calories), about one can of beer.
@@ -252,7 +313,22 @@ For IOS users the probability is 98.129%: about 240 more steps per day, roughly 
 
 Android users gain more: 1,850 steps per day on average, against 240 for IOS. But the Android data is weak: of the 1,344 Android users, only 161 have data both before and after the install (158 after removing the users with more than 20,000 average steps per day, see section 3).
 
-Next steps: get more data about the users (age, sex, location, weather, device, where they installed the app from, etc.) to see which groups become more active. That would help the company aim its campaigns at the right segments. It is also worth finding out why so much Android data is missing.
+**But the app is not what causes the increase.** The placebo test (section 4.3) shows that users were already walking more each week before installing it. And when we compare them with users who installed the app one week later, on the same calendar days (section 4.4), the users without the app go up even more: the difference is -95 steps per day (95% interval: -274 to +100). The increase comes from the season (the installs go from January to April) and from users who were already becoming more active. If the app has an effect, it is small: at most around 100 steps per day.
+
+Next steps:
+
+- **Run an A/B test** to measure the real effect of the app: for example, give a new motivation feature to a random half of the new users and compare both halves over the same weeks. Random groups are the only way to be fully sure.
+- Get more data about the users (age, sex, location, weather, device, where they installed the app from, etc.) to see which groups become more active. That would help the company aim its campaigns at the right segments.
+- Find out why so much Android data is missing.
+
+## 6. Limitations
+
+> **In this section** we list what I would do differently today.
+
+- **My first conclusion (sections 4.1 and 4.2) was a before/after comparison without a control group**, and it said the app works. Sections 4.3 and 4.4 were added later and show that the increase comes from the season and from a trend that started before the install. Lesson: a before/after comparison needs a control group.
+- **The control group of section 4.4 is not random**: it assumes that users who installed one week later are a good stand-in for what the treated users would have done without the app. Only an A/B test (random groups) can fully prove it.
+- **Only users with data before and after the install were kept**, which leaves out most Android users. If those users are different, the result may not apply to everyone.
+- **The calorie figures are rough**: they depend on each person's weight and pace.
 
 ## Bibliography
 
@@ -709,3 +785,89 @@ results['expected_loss'] = results['expected_loss']**2
 print(results[['variant', 'totals','avg_values', 'prob_being_best', 'expected_loss']])
 ```
 
+### A.5 Robustness checks (sections 4.3 and 4.4)
+
+```python
+# --- 4.3 Robustness check: were steps already going up before the install? ----------
+# The "Steps per day" chart (section 3) shows steps slowly going up even BEFORE the
+# install. If so, part of the "effect" could just be that trend, not the app.
+# Placebo test: pretend the app was installed one week earlier and compare week -2
+# (days -14 to -8) with week -1 (days -7 to -1). Nothing happened between those weeks,
+# so any "effect" found there is the trend.
+
+# Label each record with its week: -2 and -1 (before the install) or +1 (first week after).
+df_week = df[df.user_id.isin(df_user.user_id)].copy()
+df_week['week'] = np.select([df_week.days_after_reg.between(-14, -8),
+                             df_week.days_after_reg.between(-7, -1),
+                             df_week.days_after_reg.between(0, 6)],
+                            ['week_-2', 'week_-1', 'week_+1'], default='other')
+
+# One row per user with their average steps in each week. Only users with data in the
+# three weeks are kept, so every user is compared with themselves.
+weekly = df_week[df_week.week != 'other'] \
+    .pivot_table(index='user_id', columns='week', values='steps', aggfunc='mean') \
+    .dropna()
+print('Users with data in the three weeks:', len(weekly))
+print(weekly[['week_-2', 'week_-1', 'week_+1']].mean().round(0))
+
+# Placebo: do users already walk more in week -1 than in week -2, without the app?
+# (one-sided paired t-test on the square root, like in 4.1)
+t_stat, p = stats.ttest_rel(np.sqrt(weekly['week_-1']), np.sqrt(weekly['week_-2']), alternative='greater')
+print(f'Placebo (week -1 vs week -2): t={round(t_stat,4)}, p_value={round(p,4)}')
+
+# Jump vs trend: is the change when the app arrives (week -1 -> week +1) bigger than the
+# change that was already happening without it (week -2 -> week -1)?
+pre_change = weekly['week_-1'] - weekly['week_-2']
+post_change = weekly['week_+1'] - weekly['week_-1']
+print('Average change in steps per day, week -2 -> week -1 (no app):', round(pre_change.mean()))
+print('Average change in steps per day, week -1 -> week +1 (app):   ', round(post_change.mean()))
+t_stat, p = stats.ttest_rel(post_change, pre_change, alternative='greater')
+print(f'Jump vs trend: t={round(t_stat,4)}, p_value={round(p,4)}')
+
+# --- 4.4 Control group: users who installed the app one week later ------------------
+# Why were steps already going up? Two possible reasons:
+#   - the season: the installs go from January to April, and people walk more in spring;
+#   - the users: people often install a fitness app when they have just started to move more.
+# A fair comparison looks at the SAME calendar days for two groups of users:
+#   - "treated": users who installed the app on day D. Their week before D has no app,
+#     their week from D on has the app.
+#   - "control": users who installed it exactly 7 days later (D + 7). On those same two
+#     weeks they still don't have the app (they are in their weeks -2 and -1).
+# Both groups live the same weather and season, so the difference between their changes
+# is the effect of the app (a "difference in differences").
+
+# anchor = the calendar day of each user's day 0 (the day the app counts as installed).
+anchor = (df_week.steps_date - pd.to_timedelta(df_week.days_after_reg, unit='D')).groupby(df_week.user_id).first()
+weekly['anchor'] = weekly.index.map(anchor)
+weekly['post_change'] = post_change   # as treated: week -1 (no app) -> week +1 (app)
+weekly['pre_change'] = pre_change     # as control: week -2 -> week -1 (no app in both)
+
+def calendar_matched_changes(w):
+    """Average change of the treated and of the control users, on the same calendar days.
+    Each install day D is matched with the users who installed on D + 7."""
+    t = w.groupby('anchor').post_change.agg(['mean', 'count'])
+    c = w.groupby('anchor').pre_change.agg(['mean', 'count'])
+    c.index = c.index - pd.Timedelta(days=7)   # line up each control group with its day D
+    m = t.join(c, lsuffix='_t', rsuffix='_c', how='inner')
+    # Days with more users in both groups count more (these weights give the most precise average).
+    weight = m.count_t * m.count_c / (m.count_t + m.count_c)
+    return np.average(m.mean_t, weights=weight), np.average(m.mean_c, weights=weight)
+
+treated, control = calendar_matched_changes(weekly)
+print('Change in steps per day, on the same calendar days:')
+print('  treated (installed on day D):    ', round(treated))
+print('  control (installed on day D + 7):', round(control))
+print('  difference (effect of the app):  ', round(treated - control))
+
+# How sure are we? Bootstrap: draw 2,000 new samples of users (with replacement),
+# repeat the calculation and look at how much the difference moves.
+rng = np.random.default_rng(1988)
+boot = np.array([np.subtract(*calendar_matched_changes(weekly.iloc[rng.integers(0, len(weekly), len(weekly))]))
+                 for _ in range(2000)])
+print('95% interval of the difference:', np.percentile(boot, [2.5, 97.5]).round(0))
+print('Share of samples where the app adds steps:', round((boot > 0).mean(), 3))
+
+# The season: same weeks around the install, for users who installed in different months.
+weekly['install_month'] = weekly.anchor.dt.month
+print(weekly.groupby('install_month')[['week_-2', 'week_-1', 'week_+1']].mean().round(0))
+```

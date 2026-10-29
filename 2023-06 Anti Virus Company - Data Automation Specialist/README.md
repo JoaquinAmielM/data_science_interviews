@@ -253,7 +253,8 @@ Then 40 combinations of settings were tried and ranked by AIC (a score that rewa
 | 3 | SARIMA(1, 1, 2) x (0, 1, 1) 12 | 1033.781165 |
 | 4 | SARIMA(1, 1, 1) x (1, 1, 0) 12 | 1033.867959 |
 
-**Output (best model by AIC, SARIMA(0, 1, 3) x (0, 1, 1) 12):**
+<details>
+<summary>Output (best model by AIC, SARIMA(0, 1, 3) x (0, 1, 1) 12) (click to open)</summary>
 
 ```text
                                       SARIMAX Results                                       
@@ -281,11 +282,14 @@ Prob(H) (two-sided):                  0.77   Kurtosis:                         5
 ===================================================================================
 ```
 
+</details>
+
 I used the 3rd best model, because it is the first one whose coefficients are all significant (clearly different from zero); the two better ones had coefficients that were not.
 
 The Jarque-Bera test says the residuals (the model's mistakes) are not normally distributed. The problem is kurtosis (too many big mistakes), not symmetry, probably because of a couple of months with big residuals.
 
-**Output (model used, SARIMA(1, 1, 1) x (0, 1, 1) 12):**
+<details>
+<summary>Output (model used, SARIMA(1, 1, 1) x (0, 1, 1) 12) (click to open)</summary>
 
 ```text
                                      SARIMAX Results                                      
@@ -311,6 +315,8 @@ Heteroskedasticity (H):               0.91   Skew:                             0
 Prob(H) (two-sided):                  0.75   Kurtosis:                         5.47
 ===================================================================================
 ```
+
+</details>
 
 The diagnostic charts show a couple of residuals with unusual values (outside -3 to 3), which probably cause the non-normality. The correlogram (bottom right) shows no autocorrelation in the residuals: they look like white noise (random, with no pattern left to learn), which is what we want.
 
@@ -448,6 +454,15 @@ In the ROAS vs Spent chart:
 Finally, this view shows, for each campaign, the banners that get money but have a negative ROAS. That makes it easy to cut costs and raise revenue: spend more on banners with a high ROAS, and look into what is going wrong with the negative ones. In campaign 144724, banners 1122202 and 1122205 are a good example.
 
 ![Dashboard - effectiveness of campaigns and banners](plots/plot16_dashboard_effectiveness.png)
+
+## 4. Limitations
+
+> **In this section** we list what I would do differently today.
+
+- **The forecast was tested on only 3 months.** A backtest (predicting each month of the last 1-2 years using only the data before it) would give a much more reliable idea of the error.
+- **The model was not compared with a simple baseline** (for example, "same month last year"), so we don't know how much SARIMA really adds (see section 2.3).
+- **The "daily" process is a function you call by hand.** In production it would need a scheduler (so it runs on its own), tests, logs and a safe place for the API key.
+- **The dashboard uses last touch attribution**, which ignores the effect of awareness campaigns (see section 3).
 
 ---
 

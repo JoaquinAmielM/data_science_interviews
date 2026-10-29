@@ -23,6 +23,7 @@ The deliverable of the assignment is a report with the following structure:
 - Data modeling.
 - Cluster description.
 - Assigning clusters to the dataset.
+- Limitations.
 - Appendix: Python code.
 
 ## Executive Summary
@@ -220,6 +221,15 @@ dtype: float64
 | 4duCDxDMiRJJbc2CmnziAg | 46 | 3.57 | 0 | 0.152 | 0.043 | The Uninterested |
 | 2EeuYhLuzvvrJ9v2pVrTjQ | 30 | 3.00 | 0 | 0.133 | 0.033 | The Pessimists |
 | 5AwX3A1D-PJkkrWuRpmpCA | 49 | 4.30 | 2 | 0.388 | 0.735 | The Uninterested |
+
+## Limitations
+
+> **In this section** we list what I would do differently today.
+
+- **The number of groups (5) was picked by eye** from the elbow chart. A second check, like the silhouette score (how well each user fits its own group compared with the closest other group), would back up the choice.
+- **K-means works best with round groups of similar size**, and some variables are still very skewed after removing the outliers. A log transformation before clustering would probably give cleaner groups.
+- **The groups were not tested for stability**: running K-means again with another random start, or on a sample of the users, should give similar groups.
+- **The raw data (`Yelp.csv`) is not in this repository**, so the analysis can't be re-run from here.
 
 ## Appendix: Python code
 

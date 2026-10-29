@@ -56,7 +56,8 @@ Please send back within seven days the following:
 | 3 | 7447056 | 0.000000 | 0 | lateralpayments | 33.0 | IR | M | Special | 0.0 |
 | 4 | 7047755 | 0.000000 | 0 | payr | 29.0 | MY | M | Special | 0.0 |
 
-**Output:**
+<details>
+<summary>Output (click to open)</summary>
 
 ```text
 Table Model - Structure:
@@ -83,6 +84,8 @@ Dim_Alert_Type_Desc     object
 VIP                    float64
 dtype: object
 ```
+
+</details>
 
 ### 2.2 Categorical variables: descriptive analysis
 
@@ -144,7 +147,8 @@ The share of VIP players is similar for every alert type. In the next steps, ale
 
 **Country:** the share of VIP players changes a lot from one country to another (the chart that showed it was not saved).
 
-**Output:**
+<details>
+<summary>Output (click to open)</summary>
 
 ```text
 NaN    353
@@ -161,9 +165,12 @@ UA     141
 Name: Country, Length: 196, dtype: int64
 ```
 
+</details>
+
 **Deposit Method:** as the tables below show, the share of VIP players changes a lot between deposit methods.
 
-**Output:**
+<details>
+<summary>Output (click to open)</summary>
 
 ```text
 NaN                 331
@@ -179,6 +186,8 @@ gvcserregulartrx    192
 cqr_banktransfer    181
 Name: Deposit_Method, Length: 155, dtype: int64
 ```
+
+</details>
 
 ![Percentage of VIP per deposit method - Top 10 and Last 10](plots/plot3_vip_per_deposit_method.png)
 
@@ -232,7 +241,8 @@ The table below shows that *Deposit_Amount*, *Deposit_Quantity* and *VIP* have n
 
 In the range shown (0 to 200), VIP and non-VIP players deposit about the same. But more non-VIP players make small deposits, and the summary below shows that VIPs deposit more (average 974 vs 103, median 56 vs 43).
 
-**Output:**
+<details>
+<summary>Output (click to open)</summary>
 
 ```text
 Deposit Amount  - No VIP:
@@ -258,6 +268,8 @@ max      10085.205071
 Name: Deposit_Amount, dtype: float64
 ```
 
+</details>
+
 Of the 6,917 players who never deposited money, only 160 are VIP (2.31%). Of the players who did deposit, 9.1% are VIP. So whether a player deposits or not is a good predictor.
 
 ![Heatmap of VIP versus deposit status](plots/plot5_deposit_status_vs_vip.png)
@@ -270,7 +282,8 @@ VIP players are a bit older than non-VIP players.
 
 ![Age distribution: all players, VIP and No VIP](plots/plot7_age_distribution.png)
 
-**Output:**
+<details>
+<summary>Output (click to open)</summary>
 
 ```text
 Age - No VIP:
@@ -295,6 +308,8 @@ min        18.000000
 max        69.000000
 Name: Age, dtype: float64
 ```
+
+</details>
 
 ![Correlation plot](plots/plot8_correlation.png)
 
@@ -455,6 +470,15 @@ To improve the model, we should take into account what each mistake costs: calli
 
 > **In this section** we applied the same preparation steps to the file to predict, used the Random Forest to get the probability of being VIP for each player and saved the file with those probabilities in the VIP column.
 
+
+## 6. Limitations
+
+> **In this section** we list what I would do differently today.
+
+- **The gain over the baseline is modest**: log loss goes from 0.277 to 0.240. Better data about each player (for example, betting activity or sessions) would probably help more than a more complex model.
+- **The predicted probabilities were not checked for calibration**: whether a "30% chance of VIP" really means that 3 in 10 of those players become VIP. Log loss, the main metric, punishes badly calibrated probabilities, so this is worth checking (for example, with a calibration curve).
+- **The four models were compared on a single train/test split.** With only 8% VIPs, the test set has few of them, so the scores move a bit by chance. Cross-validation (repeating the split several times) would make the comparison more reliable.
+- **The cost of each mistake was not used** to choose the cut-off between "VIP" and "not VIP" (see section 4.3).
 
 ## Appendix: Python code
 
